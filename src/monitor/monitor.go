@@ -29,6 +29,8 @@ const (
 	serverIdleTimeout  = time.Second * 120
 
 	cryptocompareFrequency = time.Minute * 5
+	ethApiFrequency        = time.Minute * 5
+	ethApiUrl              = "https://api.etherscan.io/api?module=account&action=balance&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a&tag=latest"
 )
 
 // AddrManager interface provides apis to access resource of btc address
@@ -77,6 +79,16 @@ type CryptocompareData struct {
 var cryptocompareETHtoUSDcourse float32 = 510.0
 var cryptocompareUpdateTime = time.Now().Add(-time.Hour)
 
+// ETH additional
+type ETHApiResponse struct {
+	Status  string
+	Result  string
+	Message string
+}
+
+var ethApiUpdateTime = time.Now().Add(-time.Hour)
+var ethApiValue = decimal.New(0, 0)
+
 // Config configuration info for monitor service
 type Config struct {
 	Addr          string
@@ -91,16 +103,16 @@ type Config struct {
 
 // Monitor monitor service struct
 type Monitor struct {
-	log logrus.FieldLogger
+	log              logrus.FieldLogger
 	AddrManager
 	EthAddrManager   AddrManager
 	SkyAddrManager   AddrManager
 	WavesAddrManager AddrManager
 	DepositStatusGetter
 	ScanAddressGetter
-	cfg  Config
-	ln   *http.Server
-	quit chan struct{}
+	cfg              Config
+	ln               *http.Server
+	quit             chan struct{}
 }
 
 // New creates monitor service
@@ -302,7 +314,7 @@ var updateEthToUSDCourse = func(log logrus.FieldLogger) {
 		return
 	}
 
-	timeout := time.Duration(1 * time.Second)
+	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -323,7 +335,43 @@ var updateEthToUSDCourse = func(log logrus.FieldLogger) {
 				}
 			}
 		} else {
-			log.Error("Response Status of  min-api.cryptocompare :" + rsp.Status + "\n\t body: ")
+			log.Error("Response Status of  min-api.cryptocompare :" + rsp.Status)
+		}
+	}
+}
+
+var updateAdditionalEth = func(log logrus.FieldLogger) {
+	if ethApiUpdateTime.After(time.Now().Add(-ethApiFrequency)) {
+		return
+	}
+
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+	rsp, err := client.Get(ethApiUrl)
+	if err != nil {
+		log.Error("Can't connect to " + ethApiUrl + " Error: " + err.Error())
+	} else {
+		if rsp.StatusCode == http.StatusOK {
+			defer rsp.Body.Close()
+
+			var jResponse ETHApiResponse
+			if err := json.NewDecoder(rsp.Body).Decode(&jResponse); err != nil {
+				log.Error("Can't parse " + ethApiUrl + " json response")
+			} else {
+				if jResponse.Status == "1" {
+					eth, err := mathutil.DecimalFromString(jResponse.Result)
+					if err != nil {
+						log.Error("Can't DecimalFromString " + jResponse.Result)
+					}
+					ethToWei := decimal.New(exchange.WeiPerETH, 0)
+					ethApiValue = eth.DivRound(ethToWei, 18)
+					ethApiUpdateTime = time.Now()
+				}
+			}
+		} else {
+			log.Error("Response Status of " + ethApiUrl + " :" + rsp.Status)
 		}
 	}
 }
@@ -402,7 +450,7 @@ func (m *Monitor) ethTotalStatsHandler() http.HandlerFunc {
 
 		mdl := mathutil.IntToMDL(ts.TotalMDLSent)
 		usd := mdl.Mul(decimal.NewFromFloat(0.05)).Add(m.cfg.FixUsdValue)
-		eth := usd.Div(decimal.NewFromFloat(float64(cryptocompareETHtoUSDcourse)))
+		eth := usd.Div(decimal.NewFromFloat(float64(cryptocompareETHtoUSDcourse))).Add(ethApiValue)
 
 		if err := httputil.JSONResponse(w, map[string]string{"eth": eth.String()}); err != nil {
 			log.WithError(err).Error("Write json response failed")

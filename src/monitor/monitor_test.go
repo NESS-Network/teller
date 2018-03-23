@@ -337,8 +337,20 @@ func TestMonitorUpdateEthToUSDCourse(t *testing.T) {
 	require.NotEqual(t, float32(0), cryptocompareETHtoUSDcourse)
 }
 
+func TestMonitorUpdateAdditionalEth(t *testing.T) {
+	ethApiValue = decimal.New(0,0)
+
+	log, _ := testutil.NewLogger(t)
+
+	updateAdditionalEth(log)
+
+	log.Print(ethApiValue)
+	require.False(t, ethApiValue.Equal(decimal.New(0,0)))
+}
+
 func TestMonitorEthTotalStatsHandler(t *testing.T) {
 	updateEthToUSDCourse = func(log logrus.FieldLogger) {}
+	updateAdditionalEth = func(log logrus.FieldLogger) {}
 	cryptocompareETHtoUSDcourse = 100
 
 	dummyDps := dummyDepositStatusGetter{dpis: statsDpis}
