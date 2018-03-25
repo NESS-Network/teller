@@ -30,7 +30,7 @@ const (
 
 	cryptocompareFrequency = time.Minute * 5
 	ethApiFrequency        = time.Minute * 5
-	ethApiUrl              = "https://api.etherscan.io/api?module=account&action=balance&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a&tag=latest"
+	ethApiUrl              = "https://api.etherscan.io/api?module=account&action=balance&address=0x930E227b4E46412BB33717e480c3fbd3e0ce325c&tag=latest"
 )
 
 // AddrManager interface provides apis to access resource of btc address
