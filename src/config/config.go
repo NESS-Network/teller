@@ -133,9 +133,10 @@ type SkyRPC struct {
 
 // WavesRPC config for wavesrpc
 type WavesRPC struct {
-	Server  string `mapstructure:"server"`
-	Port    string `mapstructure:"port"`
-	Enabled bool   `mapstructure:"enabled"`
+	Server   string `mapstructure:"server"`
+	Port     string `mapstructure:"port"`
+	Enabled  bool   `mapstructure:"enabled"`
+	Protocol string `mapstructure:"protocol"`
 }
 
 // WavesMDLRPC config for wavesmdlrpc
@@ -470,6 +471,9 @@ func (c Config) Validate() error {
 			}
 			if c.WavesRPC.Port == "" {
 				oops("waves_rpc.port missing")
+			}
+			if c.WavesRPC.Protocol == "" {
+				oops("waves_rpc.protocol missing")
 			}
 		}
 

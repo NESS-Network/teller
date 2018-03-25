@@ -194,31 +194,40 @@ func (s *WAVESScanner) GetDeposit() <-chan DepositNote {
 
 // WavesClient provides methods for sending coins
 type WavesClient struct {
-	walletFile string
-	changeAddr string
+	MainNET string  // defaults to "https://nodes.wavesnodes.com"
+}
+
+// NewEthClient create ethereum rpc client
+func NewWavesClient(url string) (wc *WavesClient) {
+	if url != "" {
+		wc = &WavesClient{MainNET:url}
+	} else {
+		wc = &WavesClient{}
+	}
+	return wc
 }
 
 // GetTransaction returns transaction by txid
 func (c *WavesClient) GetTransaction(txid string) (*model.Transactions, error) {
-	transaction, _, err := client.NewTransactionsService().GetTransactionsInfoID(txid)
+	transaction, _, err := client.NewTransactionsService(c.MainNET).GetTransactionsInfoID(txid)
 	return transaction, err
 }
 
 // GetBlocks get blocks from RPC
 func (c *WavesClient) GetBlocks(start, end int64) (blocks *[]model.Blocks, err error) {
-	blocks, _, err = client.NewBlocksService().GetBlocksSeqFromTo(start, end)
+	blocks, _, err = client.NewBlocksService(c.MainNET).GetBlocksSeqFromTo(start, end)
 	return blocks, err
 }
 
 // GetBlocksBySeq get blocks by seq
 func (c *WavesClient) GetBlocksBySeq(seq int64) (block *model.Blocks, err error) {
-	block, _, err = client.NewBlocksService().GetBlocksAtHeight(seq)
+	block, _, err = client.NewBlocksService(c.MainNET).GetBlocksAtHeight(seq)
 	return block, err
 }
 
 // GetLastBlocks get last blocks
 func (c *WavesClient) GetLastBlocks() (blocks *model.Blocks, err error) {
-	blocks, _, err = client.NewBlocksService().GetBlocksLast()
+	blocks, _, err = client.NewBlocksService(c.MainNET).GetBlocksLast()
 	return blocks, err
 }
 

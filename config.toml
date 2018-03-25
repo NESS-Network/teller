@@ -40,7 +40,8 @@ port = "6430" # REQUIRED
 [waves_rpc]
 enabled = true # not yet implemented
 server = "127.0.0.1" # REQUIRED
-port = "8081" # REQUIRED
+port = "6860" # REQUIRED
+protocol = "http" # REQUIRED
 
 [waves_mdl_rpc]
 enabled = false # not yet implemented
