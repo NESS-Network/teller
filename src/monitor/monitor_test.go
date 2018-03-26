@@ -12,8 +12,8 @@ import (
 	"github.com/MDLlife/teller/src/exchange"
 	"github.com/MDLlife/teller/src/scanner"
 	"github.com/MDLlife/teller/src/util/testutil"
-	"github.com/sirupsen/logrus"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 type dummyBtcAddrMgr struct {
@@ -67,7 +67,14 @@ func (dps dummyDepositStatusGetter) GetDepositStatusDetail(flt exchange.DepositF
 }
 
 func (dps dummyDepositStatusGetter) GetDepositStats() (*exchange.DepositStats, error) {
-	stats := &exchange.DepositStats{0, 0, 0, 0, 0, 0}
+	stats := &exchange.DepositStats{
+		TotalBTCReceived:   0,
+		TotalETHReceived:   0,
+		TotalSKYReceived:   0,
+		TotalWAVESReceived: 0,
+		TotalMDLSent:       0,
+		TotalTransactions:  0,
+	}
 
 	for _, dpi := range dps.dpis {
 		if dpi.Status == exchange.StatusDone { // count only processed
@@ -95,130 +102,6 @@ type dummyScanAddrs struct {
 
 func (ds dummyScanAddrs) GetScanAddresses() ([]string, error) {
 	return []string{}, nil
-}
-
-func TestRunMonitor(t *testing.T) {
-	dpis := []exchange.DepositInfo{
-		{
-			DepositAddress: "b1",
-			MDLAddress:     "s1",
-			Status:         exchange.StatusWaitDeposit,
-		},
-		{
-			DepositAddress: "b2",
-			MDLAddress:     "s2",
-			Status:         exchange.StatusWaitSend,
-		},
-		{
-			DepositAddress: "b3",
-			MDLAddress:     "s3",
-			Status:         exchange.StatusWaitConfirm,
-		},
-		{
-			DepositAddress: "b4",
-			MDLAddress:     "s4",
-			Status:         exchange.StatusDone,
-		},
-		{
-			DepositAddress: "b5",
-			MDLAddress:     "s6",
-			Status:         exchange.StatusDone,
-		},
-	}
-
-	dummyDps := dummyDepositStatusGetter{dpis: dpis}
-
-	cfg := Config{
-		"localhost:7908",
-		0, 0, 0, 0, 0, decimal.New(0, 0), 0,
-	}
-
-	log, _ := testutil.NewLogger(t)
-	m := New(log, cfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{}, &dummyDps, &dummyScanAddrs{})
-
-	time.AfterFunc(1*time.Second, func() {
-		rsp, err := http.Get(fmt.Sprintf("http://localhost:7908/api/address"))
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, rsp.StatusCode)
-
-		var addrUsage addressUsage
-		err = json.NewDecoder(rsp.Body).Decode(&addrUsage)
-		require.NoError(t, err)
-		require.Equal(t, uint64(10), addrUsage.RestAddrNum)
-		testutil.CheckError(t, rsp.Body.Close)
-
-		var tt = []struct {
-			name        string
-			status      string
-			expectCode  int //
-			expectValue []exchange.DepositInfo
-		}{
-			{
-				"get deposit that are in waiting_deposit status",
-				"waiting_deposit",
-				http.StatusOK,
-				dpis[:1],
-			},
-			{
-				"get deposit that are in waiting_send status",
-				"waiting_send",
-				http.StatusOK,
-				dpis[1:2],
-			},
-			{
-				"get deposit that are in waiting_confirm status",
-				"waiting_confirm",
-				http.StatusOK,
-				dpis[2:3],
-			},
-			{
-				"get deposit that are in waiting_done status",
-				"done",
-				http.StatusOK,
-				dpis[3:5],
-			},
-			{
-				"get unknown status",
-				"invalid",
-				http.StatusBadRequest,
-				nil,
-			},
-		}
-
-		for _, tc := range tt {
-			t.Run(tc.name, func(t *testing.T) {
-				rsp, err := http.Get(fmt.Sprintf("http://localhost:7908/api/deposit_status?status=%s", tc.status))
-				require.NoError(t, err)
-				defer testutil.CheckError(t, rsp.Body.Close)
-				require.Equal(t, tc.expectCode, rsp.StatusCode)
-
-				if rsp.StatusCode == http.StatusOK {
-					var st []exchange.DepositStatusDetail
-					err := json.NewDecoder(rsp.Body).Decode(&st)
-					require.NoError(t, err)
-
-					dss := make([]exchange.DepositInfo, 0, len(st))
-					for _, s := range st {
-						dss = append(dss, exchange.DepositInfo{
-							Seq:            s.Seq,
-							UpdatedAt:      s.UpdatedAt,
-							Status:         exchange.NewStatusFromStr(s.Status),
-							DepositAddress: s.DepositAddress,
-							MDLAddress:     s.MDLAddress,
-							Txid:           s.Txid,
-						})
-					}
-					require.Equal(t, tc.expectValue, dss)
-				}
-			})
-		}
-
-		m.Shutdown()
-	})
-
-	if err := m.Run(); err != nil {
-		return
-	}
 }
 
 // data for stats tests
@@ -255,8 +138,131 @@ var statsDpis = []exchange.DepositInfo{
 	},
 }
 var statsCfg = Config{
-	"localhost:7908",
+	"localhost:1234",
 	10, 11, 12, 13, 14, decimal.NewFromFloat(10.5), 10,
+}
+
+func TestRunMonitor(t *testing.T) {
+	dpis := []exchange.DepositInfo{
+		{
+			DepositAddress: "b1",
+			MDLAddress:     "s1",
+			Status:         exchange.StatusWaitDeposit,
+		},
+		{
+			DepositAddress: "b2",
+			MDLAddress:     "s2",
+			Status:         exchange.StatusWaitSend,
+		},
+		{
+			DepositAddress: "b3",
+			MDLAddress:     "s3",
+			Status:         exchange.StatusWaitConfirm,
+		},
+		{
+			DepositAddress: "b4",
+			MDLAddress:     "s4",
+			Status:         exchange.StatusDone,
+		},
+		{
+			DepositAddress: "b5",
+			MDLAddress:     "s6",
+			Status:         exchange.StatusDone,
+		},
+	}
+
+	dummyDps := dummyDepositStatusGetter{dpis: dpis}
+
+	log, _ := testutil.NewLogger(t)
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{}, &dummyDps, &dummyScanAddrs{})
+
+	err := setupTestServer(t, m)
+	require.NoError(t, err)
+
+	targetServer := fmt.Sprintf("http://%s/api/address", statsCfg.Addr)
+	rsp, err := http.Get(targetServer)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rsp.StatusCode)
+
+	var addrUsage addressUsage
+	err = json.NewDecoder(rsp.Body).Decode(&addrUsage)
+	require.NoError(t, err)
+	require.Equal(t, uint64(10), addrUsage.RestAddrNum)
+	testutil.CheckError(t, rsp.Body.Close)
+
+	var tt = []struct {
+		name        string
+		status      string
+		expectCode  int //
+		expectValue []exchange.DepositInfo
+	}{
+		{
+			"get deposit that are in waiting_deposit status",
+			"waiting_deposit",
+			http.StatusOK,
+			dpis[:1],
+		},
+		{
+			"get deposit that are in waiting_send status",
+			"waiting_send",
+			http.StatusOK,
+			dpis[1:2],
+		},
+		{
+			"get deposit that are in waiting_confirm status",
+			"waiting_confirm",
+			http.StatusOK,
+			dpis[2:3],
+		},
+		{
+			"get deposit that are in waiting_done status",
+			"done",
+			http.StatusOK,
+			dpis[3:5],
+		},
+		{
+			"get unknown status",
+			"invalid",
+			http.StatusBadRequest,
+			nil,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+
+			targetServer := fmt.Sprintf("http://%s/api/deposit_status?status=%s", statsCfg.Addr, tc.status)
+			rsp, err := http.Get(targetServer)
+			require.NoError(t, err)
+			defer testutil.CheckError(t, rsp.Body.Close)
+			require.Equal(t, tc.expectCode, rsp.StatusCode)
+
+			if rsp.StatusCode == http.StatusOK {
+				var st []exchange.DepositStatusDetail
+				err := json.NewDecoder(rsp.Body).Decode(&st)
+				require.NoError(t, err)
+
+				dss := make([]exchange.DepositInfo, 0, len(st))
+				for _, s := range st {
+					dss = append(dss, exchange.DepositInfo{
+						Seq:            s.Seq,
+						UpdatedAt:      s.UpdatedAt,
+						Status:         exchange.NewStatusFromStr(s.Status),
+						DepositAddress: s.DepositAddress,
+						MDLAddress:     s.MDLAddress,
+						Txid:           s.Txid,
+					})
+				}
+				require.Equal(t, tc.expectValue, dss)
+			}
+		})
+	}
+
+	defer func() {
+		m.Shutdown()
+		timer := time.NewTimer(time.Second * 1)
+		<-timer.C
+	}()
 }
 
 func TestMonitorDepositStats(t *testing.T) {
@@ -264,10 +270,11 @@ func TestMonitorDepositStats(t *testing.T) {
 
 	log, _ := testutil.NewLogger(t)
 	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
-	err := setupTestServer(m)
+	err := setupTestServer(t, m)
 	require.NoError(t, err)
 
-	rsp, err := http.Get(fmt.Sprintf("http://localhost:7908/api/stats"))
+	targetServer := fmt.Sprintf("http://%s/api/stats", statsCfg.Addr)
+	rsp, err := http.Get(targetServer)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rsp.StatusCode)
 
@@ -286,7 +293,7 @@ func TestMonitorDepositStats(t *testing.T) {
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)
 		m.Shutdown()
-		timer := time.NewTimer(time.Second * 5)
+		timer := time.NewTimer(time.Second * 1)
 		<-timer.C
 	}()
 
@@ -297,11 +304,12 @@ func TestMonitorWebReadyDepositStats(t *testing.T) {
 
 	log, _ := testutil.NewLogger(t)
 	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
-	err := setupTestServer(m)
+	err := setupTestServer(t, m)
 
 	require.NoError(t, err)
 
-	rsp, err := http.Get(fmt.Sprintf("http://localhost:7908/api/web-stats"))
+	targetServer := fmt.Sprintf("http://%s/api/web-stats", statsCfg.Addr)
+	rsp, err := http.Get(targetServer)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rsp.StatusCode)
 
@@ -320,7 +328,7 @@ func TestMonitorWebReadyDepositStats(t *testing.T) {
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)
 		m.Shutdown()
-		timer := time.NewTimer(time.Second * 5)
+		timer := time.NewTimer(time.Second * 1)
 		<-timer.C
 	}()
 
@@ -333,7 +341,6 @@ func TestMonitorUpdateEthToUSDCourse(t *testing.T) {
 
 	updateEthToUSDCourse(log)
 
-	log.Print(cryptocompareETHtoUSDcourse)
 	require.NotEqual(t, float32(0), cryptocompareETHtoUSDcourse)
 }
 
@@ -350,20 +357,21 @@ func TestMonitorUpdateEthToUSDCourse(t *testing.T) {
 // }
 
 func TestMonitorEthTotalStatsHandler(t *testing.T) {
-	ethApiValue = decimal.New(0,0)
+	ethAPIValue = decimal.New(0, 0)
 	updateEthToUSDCourse = func(log logrus.FieldLogger) {}
-	updateAdditionalEth = func(log logrus.FieldLogger) {}
 	cryptocompareETHtoUSDcourse = 100
 
 	dummyDps := dummyDepositStatusGetter{dpis: statsDpis}
 
 	log, _ := testutil.NewLogger(t)
-	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10},&dummyDps, &dummyScanAddrs{})
-	err := setupTestServer(m)
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
+	err := setupTestServer(t, m)
 
 	require.NoError(t, err)
 
-	rsp, err := http.Get(fmt.Sprintf("http://localhost:7908/api/eth-total-stats"))
+	targetServer := fmt.Sprintf("http://%s/api/eth-total-stats", statsCfg.Addr)
+	rsp, err := http.Get(targetServer)
+
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rsp.StatusCode)
 
@@ -376,12 +384,12 @@ func TestMonitorEthTotalStatsHandler(t *testing.T) {
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)
 		m.Shutdown()
-		timer := time.NewTimer(time.Second * 5)
+		timer := time.NewTimer(time.Second * 1)
 		<-timer.C
 	}()
 }
 
-func setupTestServer(m *Monitor) error {
+func setupTestServer(t *testing.T, m *Monitor) error {
 	mux := m.setupMux()
 
 	m.ln = &http.Server{
@@ -393,11 +401,8 @@ func setupTestServer(m *Monitor) error {
 	}
 
 	go func() {
-		m.ln.ListenAndServe()
-	}()
-
-	go func() {
 		if err := m.Run(); err != nil {
+			t.Logf("m.Run(), %v", err)
 			return
 		}
 	}()

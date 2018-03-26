@@ -84,7 +84,7 @@ func wavesBlock2CommonBlock(block *model.Blocks) (*CommonBlock, error) {
 	cb := CommonBlock{}
 
 	cb.Hash = block.Signature
-	cb.Height = int64(block.Height)
+	cb.Height = block.Height
 	//cb.RawTx = make([]CommonTx, 0, len(block.Transactions))
 	for _, tx := range block.Transactions {
 		if tx.Recipient == "" {
@@ -113,7 +113,7 @@ func (s *WAVESScanner) GetBlockCount() (int64, error) {
 		return 0, err
 	}
 
-	return int64(rb.Height), nil
+	return rb.Height, nil
 }
 
 // getBlock returns block of given hash
@@ -148,7 +148,7 @@ func (s *WAVESScanner) waitForNextBlock(block *CommonBlock) (*CommonBlock, error
 	log.Debug("Waiting for the next block")
 
 	for {
-		nextBlock, err := s.getNextBlock(int64(block.Height))
+		nextBlock, err := s.getNextBlock(block.Height)
 		if err != nil {
 			if err == ErrEmptyBlock {
 				log.WithError(err).Debug("getNextBlock empty")
@@ -194,13 +194,13 @@ func (s *WAVESScanner) GetDeposit() <-chan DepositNote {
 
 // WavesClient provides methods for sending coins
 type WavesClient struct {
-	MainNET string  // defaults to "https://nodes.wavesnodes.com"
+	MainNET string // defaults to "https://nodes.wavesnodes.com"
 }
 
-// NewEthClient create ethereum rpc client
+// NewWavesClient create ethereum rpc client
 func NewWavesClient(url string) (wc *WavesClient) {
 	if url != "" {
-		wc = &WavesClient{MainNET:url}
+		wc = &WavesClient{MainNET: url}
 	} else {
 		wc = &WavesClient{}
 	}

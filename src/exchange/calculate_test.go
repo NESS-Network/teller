@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/MDLlife/MDL/src/util/droplet"
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCalculateMDLValue(t *testing.T) {
@@ -849,7 +849,7 @@ func TestCalculateWavesMDLValue(t *testing.T) {
 
 		{
 			maxDecimals: 0,
-			droplets:    1e8,  // 1 WAVES
+			droplets:    1e8, // 1 WAVES
 			rate:        "500",
 			result:      500e6, // 500 MDL
 		},
@@ -1052,8 +1052,6 @@ func TestCalculateWavesMDLValue(t *testing.T) {
 
 				droptletsDecimal := decimal.New(int64(tc.droplets/100), -6)
 				dropletsAmtCoins := droptletsDecimal.StringFixed(6)
-
-
 
 				require.NoError(t, err)
 

@@ -197,8 +197,8 @@ func (s *SKYScanner) GetDeposit() <-chan DepositNote {
 
 // SkyClient provides methods for sending coins
 type SkyClient struct {
-	walletFile   string
-	changeAddr   string
+	//walletFile   string
+	//changeAddr   string
 	skyRPCClient *webrpc.Client
 }
 

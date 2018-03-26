@@ -55,9 +55,9 @@ type dummySkyrpcclient struct {
 	//hasSetMissingHash          bool
 
 	//log          logrus.FieldLogger
-	Base         CommonScanner
-	walletFile   string
-	changeAddr   string
+	Base CommonScanner
+	//walletFile   string
+	//changeAddr   string
 	skyRPCClient *webrpc.Client
 }
 
