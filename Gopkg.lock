@@ -223,7 +223,7 @@
     "client",
     "model"
   ]
-  revision = "845b419520227ef2322ee1a7498079662a6ae846"
+  revision = "a00c569266c509b0a9f46ee5916ad9360b627ac0"
 
 [[projects]]
   name = "github.com/op/go-logging"
@@ -449,6 +449,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "581ba7af509b04ba1816f186fa3eadf4be372b501828027dcaef4ff6398a49ef"
+  inputs-digest = "365c9f3a21c18d2124e4ace5d53c6fa2d4002b191083f1edb7eb95b857b7700d"
   solver-name = "gps-cdcl"
   solver-version = 1

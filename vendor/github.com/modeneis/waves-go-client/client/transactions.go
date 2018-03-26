@@ -15,16 +15,12 @@ type TransactionsService struct {
 }
 
 // NewTransactionsService returns a new AccountService.
-func NewTransactionsService() *TransactionsService {
-	return &TransactionsService{
-		sling: sling.New().Base(MainNET),
+func NewTransactionsService(url string) *TransactionsService {
+	if url == "" {
+		url = MainNET
 	}
-}
-
-// NewTransactionsServiceTest returns a new AccountService.
-func NewTransactionsServiceTest() *TransactionsService {
 	return &TransactionsService{
-		sling: sling.New().Base(TestNET),
+		sling: sling.New().Base(url),
 	}
 }
 

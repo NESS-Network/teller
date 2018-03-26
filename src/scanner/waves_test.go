@@ -53,6 +53,17 @@ type dummyWavesrpcclient struct {
 	Base       CommonScanner
 	walletFile string
 	changeAddr string
+	MainNET string
+}
+
+// NewEthClient create ethereum rpc client
+func newWavesClientTest(url string) (wc *dummyWavesrpcclient) {
+	if url != "" {
+		wc = &dummyWavesrpcclient{MainNET:url}
+	} else {
+		wc = &dummyWavesrpcclient{}
+	}
+	return wc
 }
 
 func openDummyWavesDB(t *testing.T) *bolt.DB {
@@ -65,7 +76,7 @@ func openDummyWavesDB(t *testing.T) *bolt.DB {
 func setupWavesScannerWithNonExistInitHeight(t *testing.T, db *bolt.DB) *WAVESScanner {
 	log, _ := testutil.NewLogger(t)
 
-	rpc := new(dummyWavesrpcclient)
+	wavesClient := newWavesClientTest("")
 
 	store, err := NewStore(log, db)
 	require.NoError(t, err)
@@ -79,7 +90,7 @@ func setupWavesScannerWithNonExistInitHeight(t *testing.T, db *bolt.DB) *WAVESSc
 		InitialScanHeight:     666,
 		ConfirmationsRequired: 0,
 	}
-	scr, err := NewWavescoinScanner(log, store, rpc, cfg)
+	scr, err := NewWavescoinScanner(log, store, wavesClient, cfg)
 	require.NoError(t, err)
 
 	return scr
@@ -87,6 +98,8 @@ func setupWavesScannerWithNonExistInitHeight(t *testing.T, db *bolt.DB) *WAVESSc
 
 func setupWavesScannerWithDB(t *testing.T, wavesDB *bolt.DB, db *bolt.DB) *WAVESScanner {
 	log, _ := testutil.NewLogger(t)
+
+	wavesClient := newWavesClientTest("http://localhost:6860")
 
 	store, err := NewStore(log, db)
 	require.NoError(t, err)
@@ -100,7 +113,7 @@ func setupWavesScannerWithDB(t *testing.T, wavesDB *bolt.DB, db *bolt.DB) *WAVES
 		InitialScanHeight:     924610,
 		ConfirmationsRequired: 0,
 	}
-	scr, err := NewWavescoinScanner(log, store, new(dummyWavesrpcclient), cfg)
+	scr, err := NewWavescoinScanner(log, store, wavesClient, cfg)
 	require.NoError(t, err)
 
 	return scr
@@ -522,12 +535,12 @@ func TestWavesScanner(t *testing.T) {
 
 // GetTransaction returns transaction by txid
 func (c *dummyWavesrpcclient) GetTransaction(txid string) (*model.Transactions, error) {
-	transaction, _, err := client.NewTransactionsService().GetTransactionsInfoID(txid)
+	transaction, _, err := client.NewTransactionsService(c.MainNET).GetTransactionsInfoID(txid)
 	return transaction, err
 }
 
 func (c *dummyWavesrpcclient) GetBlocks(start, end int64) (*[]model.Blocks, error) {
-	blocks, _, err := client.NewBlocksService().GetBlocksSeqFromTo(start, end)
+	blocks, _, err := client.NewBlocksService(c.MainNET).GetBlocksSeqFromTo(start, end)
 	return blocks, err
 }
 

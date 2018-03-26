@@ -128,7 +128,9 @@ func createSkyScanner(log logrus.FieldLogger, cfg config.Config, scanStore *scan
 }
 
 func createWAVESScanner(log logrus.FieldLogger, cfg config.Config, scanStore *scanner.Store) (*scanner.WAVESScanner, error) {
-	wavesrpc := new(scanner.WavesClient)
+	url := fmt.Sprintf("%s://%s:%s",cfg.WavesRPC.Protocol, cfg.WavesRPC.Server, cfg.WavesRPC.Port)
+	log.Debug("createWAVESScanner URL, ", url)
+	wavesrpc := scanner.NewWavesClient(url)
 
 	err := scanStore.AddSupportedCoin(scanner.CoinTypeWAVES)
 	if err != nil {

@@ -18,9 +18,12 @@ type BlocksService struct {
 }
 
 // NewTransactionsService returns a new AccountService.
-func NewBlocksService() *BlocksService {
+func NewBlocksService(url string) *BlocksService {
+	if url == "" {
+		url = MainNET
+	}
 	return &BlocksService{
-		sling: sling.New().Client(nil).Base(MainNET),
+		sling: sling.New().Client(nil).Base(url),
 	}
 }
 
