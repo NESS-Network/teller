@@ -371,7 +371,7 @@ func TestMonitorEthTotalStatsHandler(t *testing.T) {
 	err = json.NewDecoder(rsp.Body).Decode(&j)
 	require.NoError(t, err)
 
-	require.Equal(t, map[string]string{"eth": "0.1050007"}, j)
+	require.Equal(t, map[string]string{"eth": "0.105000707"}, j)
 
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)
