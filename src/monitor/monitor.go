@@ -459,7 +459,7 @@ func (m *Monitor) ethTotalStatsHandler() http.HandlerFunc {
 		// update course
 		updateEthToUSDCourse(log)
 
-		mdl := mathutil.IntToMDL(ts.TotalMDLSent)
+		mdl := mathutil.IntToMDL(ts.TotalMDLSent + m.cfg.FixMdlValue)
 		usd := mdl.Mul(decimal.NewFromFloat(0.05)).Add(m.cfg.FixUsdValue)
 		eth := usd.Div(decimal.NewFromFloat(float64(cryptocompareETHtoUSDcourse))).Add(ethAPIValue)
 
