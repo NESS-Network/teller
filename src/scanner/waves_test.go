@@ -27,16 +27,8 @@ var (
 	//txConfirmed       = true
 )
 
-type wavesFakeGateway struct {
-	transactions         map[string]string
-	injectRawTxMap       map[string]bool // key: transaction hash, value indicates whether the injectTransaction should return error.
-	injectedTransactions map[string]string
-	//addrRecvUxOuts       []*historydb.UxOut
-	//addrSpentUxOUts      []*historydb.UxOut
-}
-
 type dummyWavesrpcclient struct {
-	db                           *bolt.DB
+	//db                           *bolt.DB
 	blockHashes                  map[int64]string
 	blockCount                   int64
 	blockCountError              error
@@ -50,16 +42,16 @@ type dummyWavesrpcclient struct {
 	//hasSetMissingHash          bool
 
 	//log          logrus.FieldLogger
-	Base       CommonScanner
-	walletFile string
-	changeAddr string
+	Base CommonScanner
+	//walletFile string
+	//changeAddr string
 	MainNET string
 }
 
 // NewEthClient create ethereum rpc client
 func newWavesClientTest(url string) (wc *dummyWavesrpcclient) {
 	if url != "" {
-		wc = &dummyWavesrpcclient{MainNET:url}
+		wc = &dummyWavesrpcclient{MainNET: url}
 	} else {
 		wc = &dummyWavesrpcclient{}
 	}
@@ -98,6 +90,9 @@ func setupWavesScannerWithNonExistInitHeight(t *testing.T, db *bolt.DB) *WAVESSc
 
 func setupWavesScannerWithDB(t *testing.T, wavesDB *bolt.DB, db *bolt.DB) *WAVESScanner {
 	log, _ := testutil.NewLogger(t)
+	if wavesDB == nil {
+		log.Println("setupWavesScannerWithDB, wavesDB is null")
+	}
 
 	wavesClient := newWavesClientTest("http://localhost:6860")
 
@@ -545,7 +540,7 @@ func (c *dummyWavesrpcclient) GetBlocks(start, end int64) (*[]model.Blocks, erro
 }
 
 func (c *dummyWavesrpcclient) GetBlocksBySeq(seq int64) (*model.Blocks, error) {
-	if c.forceErr == true {
+	if c.forceErr {
 		return nil, fmt.Errorf("Block %d not found", seq)
 	}
 	blocks := decodeBlockWaves(blockStringWaves)

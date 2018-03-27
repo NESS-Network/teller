@@ -4,10 +4,10 @@ package monitor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
-	"encoding/json"
 
 	"github.com/sirupsen/logrus"
 
@@ -29,8 +29,8 @@ const (
 	serverIdleTimeout  = time.Second * 120
 
 	cryptocompareFrequency = time.Minute * 5
-	ethApiFrequency        = time.Minute * 5
-	ethApiUrl              = "https://api.etherscan.io/api?module=account&action=balance&address=0x930E227b4E46412BB33717e480c3fbd3e0ce325c&tag=latest"
+	//ethApiFrequency        = time.Minute * 5
+	//ethApiUrl              = "https://api.etherscan.io/api?module=account&action=balance&address=0x930E227b4E46412BB33717e480c3fbd3e0ce325c&tag=latest"
 )
 
 // AddrManager interface provides apis to access resource of btc address
@@ -60,12 +60,13 @@ type WebReadyStats struct {
 	TotalTransactions  int64  `json:"tx"`
 }
 
-// ETH course
+// CryptocompareResponse course
 type CryptocompareResponse struct {
 	Response string              `json:"Response"`
 	Data     []CryptocompareData `json:"Data"`
 }
 
+// CryptocompareData holds the info from CyptoCompare website
 type CryptocompareData struct {
 	Time       uint32  `json:"time"`
 	Close      float32 `json:"close"`
@@ -79,15 +80,15 @@ type CryptocompareData struct {
 var cryptocompareETHtoUSDcourse float32 = 510.0
 var cryptocompareUpdateTime = time.Now().Add(-time.Hour)
 
-// ETH additional
+// ETHApiResponse additional
 type ETHApiResponse struct {
 	Status  string
 	Result  string
 	Message string
 }
 
-var ethApiUpdateTime = time.Now().Add(-time.Hour)
-var ethApiValue = decimal.New(0, 0)
+//var ethApiUpdateTime = time.Now().Add(-time.Hour)
+var ethAPIValue = decimal.New(0, 0)
 
 // Config configuration info for monitor service
 type Config struct {
@@ -103,16 +104,16 @@ type Config struct {
 
 // Monitor monitor service struct
 type Monitor struct {
-	log              logrus.FieldLogger
+	log logrus.FieldLogger
 	AddrManager
 	EthAddrManager   AddrManager
 	SkyAddrManager   AddrManager
 	WavesAddrManager AddrManager
 	DepositStatusGetter
 	ScanAddressGetter
-	cfg              Config
-	ln               *http.Server
-	quit             chan struct{}
+	cfg  Config
+	ln   *http.Server
+	quit chan struct{}
 }
 
 // New creates monitor service
@@ -323,7 +324,12 @@ var updateEthToUSDCourse = func(log logrus.FieldLogger) {
 		log.Error("Can't connect to https://min-api.cryptocompare.com/data/histominute?fsym=ETH&limit=1&tsym=USD Error: " + err.Error())
 	} else {
 		if rsp.StatusCode == http.StatusOK {
-			defer rsp.Body.Close()
+			defer func() {
+				err := rsp.Body.Close()
+				if err != nil {
+					log.WithError(err).Println("Could not close body from updateEthToUSDCourse")
+				}
+			}()
 
 			var jResponse CryptocompareResponse
 			if err := json.NewDecoder(rsp.Body).Decode(&jResponse); err != nil {
@@ -340,41 +346,46 @@ var updateEthToUSDCourse = func(log logrus.FieldLogger) {
 	}
 }
 
-var updateAdditionalEth = func(log logrus.FieldLogger) {
-	if ethApiUpdateTime.After(time.Now().Add(-ethApiFrequency)) {
-		return
-	}
-
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
-	rsp, err := client.Get(ethApiUrl)
-	if err != nil {
-		log.Error("Can't connect to " + ethApiUrl + " Error: " + err.Error())
-	} else {
-		if rsp.StatusCode == http.StatusOK {
-			defer rsp.Body.Close()
-
-			var jResponse ETHApiResponse
-			if err := json.NewDecoder(rsp.Body).Decode(&jResponse); err != nil {
-				log.Error("Can't parse " + ethApiUrl + " json response")
-			} else {
-				if jResponse.Status == "1" {
-					eth, err := mathutil.DecimalFromString(jResponse.Result)
-					if err != nil {
-						log.Error("Can't DecimalFromString " + jResponse.Result)
-					}
-					ethToWei := decimal.New(exchange.WeiPerETH, 0)
-					ethApiValue = eth.DivRound(ethToWei, 18)
-					ethApiUpdateTime = time.Now()
-				}
-			}
-		} else {
-			log.Error("Response Status of " + ethApiUrl + " :" + rsp.Status)
-		}
-	}
-}
+//var updateAdditionalEth = func(log logrus.FieldLogger) {
+//	if ethApiUpdateTime.After(time.Now().Add(-ethApiFrequency)) {
+//		return
+//	}
+//
+//	timeout := time.Duration(5 * time.Second)
+//	client := http.Client{
+//		Timeout: timeout,
+//	}
+//	rsp, err := client.Get(ethApiUrl)
+//	if err != nil {
+//		log.Error("Can't connect to " + ethApiUrl + " Error: " + err.Error())
+//	} else {
+//		if rsp.StatusCode == http.StatusOK {
+//			defer func() {
+//				err := rsp.Body.Close()
+//				if err != nil {
+//					log.WithError(err).Println("Could not close body from updateAdditionalEth")
+//				}
+//			}()
+//
+//			var jResponse ETHApiResponse
+//			if err := json.NewDecoder(rsp.Body).Decode(&jResponse); err != nil {
+//				log.Error("Can't parse " + ethApiUrl + " json response")
+//			} else {
+//				if jResponse.Status == "1" {
+//					eth, err := mathutil.DecimalFromString(jResponse.Result)
+//					if err != nil {
+//						log.Error("Can't DecimalFromString " + jResponse.Result)
+//					}
+//					ethToWei := decimal.New(exchange.WeiPerETH, 0)
+//					ethApiValue = eth.DivRound(ethToWei, 18)
+//					ethApiUpdateTime = time.Now()
+//				}
+//			}
+//		} else {
+//			log.Error("Response Status of " + ethApiUrl + " :" + rsp.Status)
+//		}
+//	}
+//}
 
 // stats returns all deposit stats prepared for web, including total BTC, ETH, SKY, WAVES received, total MDL sent and USD approximately received based on MDL.
 // Method: GET
@@ -450,7 +461,7 @@ func (m *Monitor) ethTotalStatsHandler() http.HandlerFunc {
 
 		mdl := mathutil.IntToMDL(ts.TotalMDLSent)
 		usd := mdl.Mul(decimal.NewFromFloat(0.05)).Add(m.cfg.FixUsdValue)
-		eth := usd.Div(decimal.NewFromFloat(float64(cryptocompareETHtoUSDcourse))).Add(ethApiValue)
+		eth := usd.Div(decimal.NewFromFloat(float64(cryptocompareETHtoUSDcourse))).Add(ethAPIValue)
 
 		if err := httputil.JSONResponse(w, map[string]string{"eth": eth.String()}); err != nil {
 			log.WithError(err).Error("Write json response failed")
