@@ -82,5 +82,5 @@ func (d Deposit) ID() string {
 
 // GetCoinTypes returns supported coin types
 func GetCoinTypes() []string {
-	return []string{CoinTypeBTC, CoinTypeETH, CoinTypeSKY, CoinTypeWAVES}
+	return []string{CoinTypeBTC, CoinTypeETH, CoinTypeSKY, CoinTypeWAVES, CoinTypeWAVESMDL}
 }

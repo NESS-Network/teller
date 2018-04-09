@@ -51,13 +51,14 @@ type ScanAddressGetter interface {
 
 // WebReadyStats deposit struct for api
 type WebReadyStats struct {
-	TotalBTCReceived   string `json:"btc"`
-	TotalETHReceived   string `json:"eth"`
-	TotalSKYReceived   string `json:"sky"`
-	TotalWAVESReceived string `json:"waves"`
-	TotalUSDReceived   string `json:"usd"`
-	TotalMDLSent       string `json:"mdl"`
-	TotalTransactions  int64  `json:"tx"`
+	TotalBTCReceived      string `json:"btc"`
+	TotalETHReceived      string `json:"eth"`
+	TotalSKYReceived      string `json:"sky"`
+	TotalWAVESReceived    string `json:"waves"`
+	TotalWAVESMDLReceived string `json:"waves_mdl"`
+	TotalUSDReceived      string `json:"usd"`
+	TotalMDLSent          string `json:"mdl"`
+	TotalTransactions     int64  `json:"tx"`
 }
 
 // CryptocompareResponse course
@@ -92,23 +93,25 @@ var ethAPIValue = decimal.New(0, 0)
 
 // Config configuration info for monitor service
 type Config struct {
-	Addr          string
-	FixBtcValue   int64
-	FixEthValue   int64
-	FixSkyValue   int64
-	FixWavesValue int64
-	FixMdlValue   int64
-	FixUsdValue   decimal.Decimal
-	FixTxValue    int64
+	Addr             string
+	FixBtcValue      int64
+	FixEthValue      int64
+	FixSkyValue      int64
+	FixWavesValue    int64
+	FixWavesMDLValue int64
+	FixMdlValue      int64
+	FixUsdValue      decimal.Decimal
+	FixTxValue       int64
 }
 
 // Monitor monitor service struct
 type Monitor struct {
 	log logrus.FieldLogger
 	AddrManager
-	EthAddrManager   AddrManager
-	SkyAddrManager   AddrManager
-	WavesAddrManager AddrManager
+	EthAddrManager      AddrManager
+	SkyAddrManager      AddrManager
+	WavesAddrManager    AddrManager
+	WavesMDLAddrManager AddrManager
 	DepositStatusGetter
 	ScanAddressGetter
 	cfg  Config
@@ -117,7 +120,7 @@ type Monitor struct {
 }
 
 // New creates monitor service
-func New(log logrus.FieldLogger, cfg Config, addrManager, ethAddrManager AddrManager, skyAddrManager AddrManager, wavesAddrManager AddrManager, dpstget DepositStatusGetter, sag ScanAddressGetter) *Monitor {
+func New(log logrus.FieldLogger, cfg Config, addrManager, ethAddrManager AddrManager, skyAddrManager AddrManager, wavesAddrManager AddrManager, wavesMDLAddrManager AddrManager, dpstget DepositStatusGetter, sag ScanAddressGetter) *Monitor {
 	return &Monitor{
 		log:                 log.WithField("prefix", "teller.monitor"),
 		cfg:                 cfg,
@@ -125,6 +128,7 @@ func New(log logrus.FieldLogger, cfg Config, addrManager, ethAddrManager AddrMan
 		EthAddrManager:      ethAddrManager,
 		SkyAddrManager:      skyAddrManager,
 		WavesAddrManager:    wavesAddrManager,
+		WavesMDLAddrManager: wavesMDLAddrManager,
 		DepositStatusGetter: dpstget,
 		ScanAddressGetter:   sag,
 		quit:                make(chan struct{}),
@@ -412,6 +416,8 @@ func (m *Monitor) webStatsHandler() http.HandlerFunc {
 		ts.TotalETHReceived = ts.TotalETHReceived + m.cfg.FixEthValue
 		ts.TotalSKYReceived = ts.TotalSKYReceived + m.cfg.FixSkyValue
 		ts.TotalWAVESReceived = ts.TotalWAVESReceived + m.cfg.FixWavesValue
+		ts.TotalWAVESMDLReceived = ts.TotalWAVESMDLReceived + m.cfg.FixWavesMDLValue
+
 		ts.TotalMDLSent = ts.TotalMDLSent + m.cfg.FixMdlValue
 		ts.TotalTransactions = ts.TotalTransactions + m.cfg.FixTxValue
 
@@ -423,6 +429,7 @@ func (m *Monitor) webStatsHandler() http.HandlerFunc {
 			mathutil.IntToETH(ts.TotalETHReceived).String(),
 			mathutil.IntToSKY(ts.TotalSKYReceived).String(),
 			mathutil.IntToWAV(ts.TotalWAVESReceived).String(),
+			mathutil.IntToWAV(ts.TotalWAVESMDLReceived).String(),
 			usd.String(),
 			mdl.String(),
 			ts.TotalTransactions,

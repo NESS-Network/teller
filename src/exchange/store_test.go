@@ -114,6 +114,7 @@ func TestStoreNewStore(t *testing.T) {
 		require.NotNil(t, tx.Bucket(MustGetBindAddressBkt(scanner.CoinTypeETH)))
 		require.NotNil(t, tx.Bucket(MustGetBindAddressBkt(scanner.CoinTypeSKY)))
 		require.NotNil(t, tx.Bucket(MustGetBindAddressBkt(scanner.CoinTypeWAVES)))
+		require.NotNil(t, tx.Bucket(MustGetBindAddressBkt(scanner.CoinTypeWAVESMDL)))
 		require.NotNil(t, tx.Bucket(MDLDepositSeqsIndexBkt))
 		require.NotNil(t, tx.Bucket(BtcTxsBkt))
 		return nil
@@ -219,6 +220,16 @@ func mustBindAddressWaves(t *testing.T, s Storer, mdlAddr, addr string) {
 	require.Equal(t, mdlAddr, boundAddr.MDLAddress)
 	require.Equal(t, addr, boundAddr.Address)
 	require.Equal(t, scanner.CoinTypeWAVES, boundAddr.CoinType)
+	require.Equal(t, config.BuyMethodDirect, boundAddr.BuyMethod)
+}
+
+func mustBindAddressWavesMDL(t *testing.T, s Storer, mdlAddr, addr string) {
+	boundAddr, err := s.BindAddress(mdlAddr, addr, scanner.CoinTypeWAVESMDL, config.BuyMethodDirect)
+	require.NoError(t, err)
+	require.NotNil(t, boundAddr)
+	require.Equal(t, mdlAddr, boundAddr.MDLAddress)
+	require.Equal(t, addr, boundAddr.Address)
+	require.Equal(t, scanner.CoinTypeWAVESMDL, boundAddr.CoinType)
 	require.Equal(t, config.BuyMethodDirect, boundAddr.BuyMethod)
 }
 
@@ -330,7 +341,44 @@ func TestStoreWavesBindAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// A mdl address can have multiple addresses bound to it
-	mustBindAddressSky(t, s, "sa12", "ba22")
+	mustBindAddressWaves(t, s, "sa12", "ba22")
+}
+
+func TestStoreWavesMDLBindAddress(t *testing.T) {
+	s, shutdown := newTestStore(t)
+	defer shutdown()
+
+	mustBindAddressWavesMDL(t, s, "sa12MDL", "ba12MDL")
+
+	// check bucket
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bktName := MustGetBindAddressBkt(scanner.CoinTypeWAVESMDL)
+		var ba BoundAddress
+		err := dbutil.GetBucketObject(tx, bktName, "ba12MDL", &ba)
+		require.NoError(t, err)
+		require.Equal(t, BoundAddress{
+			MDLAddress: "sa12MDL",
+			Address:    "ba12MDL",
+			CoinType:   scanner.CoinTypeWAVESMDL,
+			BuyMethod:  config.BuyMethodDirect,
+		}, ba)
+
+		var addrs []BoundAddress
+		err = dbutil.GetBucketObject(tx, MDLDepositSeqsIndexBkt, "sa12MDL", &addrs)
+		require.NoError(t, err)
+		require.Equal(t, BoundAddress{
+			MDLAddress: "sa12MDL",
+			Address:    "ba12MDL",
+			CoinType:   scanner.CoinTypeWAVESMDL,
+			BuyMethod:  config.BuyMethodDirect,
+		}, addrs[0])
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	// A mdl address can have multiple addresses bound to it
+	mustBindAddressWavesMDL(t, s, "sa12MDL", "ba22MDL")
 }
 
 func TestStoreBindAddressTwiceFails(t *testing.T) {
@@ -458,6 +506,38 @@ func TestStoreGetBindAddress(t *testing.T) {
 			nil,
 			scanner.CoinTypeWAVES,
 		},
+		{
+			"get wavesMDLaddr1",
+			"wavesMDLaddr1",
+			"wavesMDLaddr123",
+			true,
+			nil,
+			scanner.CoinTypeWAVES,
+		},
+		{
+			"get wavesMDLaddr2",
+			"wavesMDLaddr2",
+			"mdladdrMDL223",
+			true,
+			nil,
+			scanner.CoinTypeWAVESMDL,
+		},
+		{
+			"get wavesMDLaddr3",
+			"wavesMDLaddr3",
+			"mdladdrMDL223",
+			true,
+			nil,
+			scanner.CoinTypeWAVESMDL,
+		},
+		{
+			"get wavesMDLaddr not exist",
+			"wavesMDLaddr423",
+			"",
+			false,
+			nil,
+			scanner.CoinTypeWAVESMDL,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -468,6 +548,8 @@ func TestStoreGetBindAddress(t *testing.T) {
 					mustBindAddressSky(t, s, tc.expectMDLAddr, tc.coinAddr)
 				} else if tc.coinType == scanner.CoinTypeWAVES {
 					mustBindAddressWaves(t, s, tc.expectMDLAddr, tc.coinAddr)
+				} else if tc.coinType == scanner.CoinTypeWAVESMDL {
+					mustBindAddressWavesMDL(t, s, tc.expectMDLAddr, tc.coinAddr)
 				} else {
 					mustBindAddress(t, s, tc.expectMDLAddr, tc.coinAddr)
 				}

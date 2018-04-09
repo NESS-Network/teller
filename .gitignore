@@ -8,3 +8,7 @@ cert-cache
 *.wlt
 cover.out
 coverage.html
+
+src/scanner/sky.db
+src/scanner/waves.db
+src/scanner/waves_mdl.db

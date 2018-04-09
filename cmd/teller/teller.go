@@ -150,6 +150,29 @@ func createWAVESScanner(log logrus.FieldLogger, cfg config.Config, scanStore *sc
 	return wavesScanner, nil
 }
 
+func createWAVESMDLScanner(log logrus.FieldLogger, cfg config.Config, scanStore *scanner.Store) (*scanner.WAVESMDLScanner, error) {
+	url := fmt.Sprintf("%s://%s:%s", cfg.WavesMDLRPC.Protocol, cfg.WavesMDLRPC.Server, cfg.WavesMDLRPC.Port)
+	log.Debug("createWAVESMDLScanner URL, ", url)
+	wavesrpc := scanner.NewWavesClient(url)
+
+	err := scanStore.AddSupportedCoin(scanner.CoinTypeWAVESMDL)
+	if err != nil {
+		log.WithError(err).Error("scanStore.AddSupportedCoin(scanner.CoinTypeWAVESMDL) failed")
+		return nil, err
+	}
+
+	wavesMDLScanner, err := scanner.NewWavesMDLcoinScanner(log, scanStore, wavesrpc, scanner.Config{
+		ScanPeriod:            cfg.WavesMDLScanner.ScanPeriod,
+		ConfirmationsRequired: cfg.WavesMDLScanner.ConfirmationsRequired,
+		InitialScanHeight:     cfg.WavesMDLScanner.InitialScanHeight,
+	})
+	if err != nil {
+		log.WithError(err).Error("Open wavesMDLScanner service failed")
+		return nil, err
+	}
+	return wavesMDLScanner, nil
+}
+
 func run() error {
 	cur, err := user.Current()
 	if err != nil {
@@ -228,11 +251,13 @@ func run() error {
 	var ethScanner *scanner.ETHScanner
 	var skyScanner *scanner.SKYScanner
 	var wavesScanner *scanner.WAVESScanner
+	var wavesMDLScanner *scanner.WAVESMDLScanner
 
 	var scanService scanner.Scanner
 	var scanEthService scanner.Scanner
 	var scanSkyService scanner.Scanner
 	var scanWavesService scanner.Scanner
+	var scanWavesMDLService scanner.Scanner
 
 	var sendService *sender.SendService
 	var sendRPC sender.Sender
@@ -241,6 +266,7 @@ func run() error {
 	var ethAddrMgr *addrs.Addrs
 	var skyAddrMgr *addrs.Addrs
 	var wavesAddrMgr *addrs.Addrs
+	var wavesMDLAddrMgr *addrs.Addrs
 
 	// create multiplexer to manage scanner
 	multiplexer := scanner.NewMultiplexer(log)
@@ -329,6 +355,24 @@ func run() error {
 
 			if err := multiplexer.AddScanner(scanWavesService, scanner.CoinTypeWAVES); err != nil {
 				log.WithError(err).Errorf("multiplexer.AddScanner of %s failed", scanner.CoinTypeWAVES)
+				return err
+			}
+		}
+
+		// enable waves MDL scanner
+		if cfg.WavesMDLRPC.Enabled {
+			wavesMDLScanner, err = createWAVESMDLScanner(rusloggger, cfg, scanStore)
+			if err != nil {
+				log.WithError(err).Error("create wavesMDL scanner failed")
+				return err
+			}
+
+			background("wavesMDLScanner.Run", errC, wavesMDLScanner.Run)
+
+			scanWavesMDLService = wavesMDLScanner
+
+			if err := multiplexer.AddScanner(scanWavesMDLService, scanner.CoinTypeWAVESMDL); err != nil {
+				log.WithError(err).Errorf("multiplexer.AddScanner of %s failed", scanner.CoinTypeWAVESMDL)
 				return err
 			}
 		}
@@ -474,6 +518,25 @@ func run() error {
 		}
 	}
 
+	if cfg.WavesMDLRPC.Enabled {
+		// create skycoin address manager
+		r, err := util.LoadFileToReader(cfg.WavesMDLAddresses)
+		if err != nil {
+			log.WithError(err).Error("Load deposit wavesMDL address list failed")
+			return err
+		}
+
+		wavesMDLAddrMgr, err = addrs.NewWAVESAddrs(log, db, r)
+		if err != nil {
+			log.WithError(err).Error("Create wavesMDL deposit address manager failed")
+			return err
+		}
+		if err := addrManager.PushGenerator(wavesMDLAddrMgr, scanner.CoinTypeWAVESMDL); err != nil {
+			log.WithError(err).Error("add wavesMDL address manager failed")
+			return err
+		}
+	}
+
 	tellerServer := teller.New(log, exchangeClient, addrManager, cfg)
 
 	// Run the service
@@ -490,16 +553,17 @@ func run() error {
 	}
 
 	monitorCfg := monitor.Config{
-		Addr:          cfg.AdminPanel.Host,
-		FixBtcValue:   cfg.AdminPanel.FixBtcValue,
-		FixEthValue:   cfg.AdminPanel.FixEthValue,
-		FixSkyValue:   cfg.AdminPanel.FixSkyValue,
-		FixWavesValue: cfg.AdminPanel.FixWavesValue,
-		FixMdlValue:   cfg.AdminPanel.FixMdlValue,
-		FixUsdValue:   fixUsdValue,
-		FixTxValue:    cfg.AdminPanel.FixTxValue,
+		Addr:             cfg.AdminPanel.Host,
+		FixBtcValue:      cfg.AdminPanel.FixBtcValue,
+		FixEthValue:      cfg.AdminPanel.FixEthValue,
+		FixSkyValue:      cfg.AdminPanel.FixSkyValue,
+		FixWavesValue:    cfg.AdminPanel.FixWavesValue,
+		FixWavesMDLValue: cfg.AdminPanel.FixWavesMDLValue,
+		FixMdlValue:      cfg.AdminPanel.FixMdlValue,
+		FixUsdValue:      fixUsdValue,
+		FixTxValue:       cfg.AdminPanel.FixTxValue,
 	}
-	monitorService := monitor.New(log, monitorCfg, btcAddrMgr, ethAddrMgr, skyAddrMgr, wavesAddrMgr, exchangeClient, btcScanner)
+	monitorService := monitor.New(log, monitorCfg, btcAddrMgr, ethAddrMgr, skyAddrMgr, wavesAddrMgr, wavesMDLAddrMgr, exchangeClient, btcScanner)
 
 	background("monitorService.Run", errC, monitorService.Run)
 
@@ -547,6 +611,12 @@ func run() error {
 	if wavesScanner != nil {
 		log.Info("Shutting down wavesScanner")
 		wavesScanner.Shutdown()
+	}
+
+	// close the scan service
+	if wavesMDLScanner != nil {
+		log.Info("Shutting down wavesMDLScanner")
+		wavesMDLScanner.Shutdown()
 	}
 
 	// close exchange service

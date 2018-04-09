@@ -9,59 +9,58 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/modeneis/waves-go-client/client"
 	"github.com/modeneis/waves-go-client/model"
 )
 
-// WAVESScanner blockchain scanner to check if there're deposit coins
-type WAVESScanner struct {
+// WAVESMDLScanner blockchain scanner to check if there're deposit coins
+type WAVESMDLScanner struct {
 	log            logrus.FieldLogger
 	Base           CommonScanner
 	wavesRPCClient WavesRPCClient
 }
 
-// NewWavescoinScanner creates scanner instance
-func NewWavescoinScanner(log logrus.FieldLogger, store Storer, client WavesRPCClient, cfg Config) (*WAVESScanner, error) {
-	bs := NewBaseScanner(store, log.WithField("prefix", "scanner.waves"), CoinTypeWAVES, cfg)
+// NewWavesMDLcoinScanner creates scanner instance
+func NewWavesMDLcoinScanner(log logrus.FieldLogger, store Storer, client WavesRPCClient, cfg Config) (*WAVESMDLScanner, error) {
+	bs := NewBaseScanner(store, log.WithField("prefix", "scanner.wavesMDL"), CoinTypeWAVESMDL, cfg)
 
-	return &WAVESScanner{
+	return &WAVESMDLScanner{
 		wavesRPCClient: client,
-		log:            log.WithField("prefix", "scanner.waves"),
+		log:            log.WithField("prefix", "scanner.wavesMDL"),
 		Base:           bs,
 	}, nil
 }
 
 // Run starts the scanner
-func (s *WAVESScanner) Run() error {
+func (s *WAVESMDLScanner) Run() error {
 	return s.Base.Run(s.GetBlockCount, s.getBlockAtHeight, s.waitForNextBlock, s.scanBlock)
 }
 
 // Shutdown shutdown the scanner
-func (s *WAVESScanner) Shutdown() {
-	s.log.Info("Closing WAVES scanner")
+func (s *WAVESMDLScanner) Shutdown() {
+	s.log.Info("Closing WAVESMDL scanner")
 	s.wavesRPCClient.Shutdown()
 	s.Base.Shutdown()
-	s.log.Info("Waiting for WAVES scanner to stop")
-	s.log.Info("WAVES scanner stopped")
+	s.log.Info("Waiting for WAVESMDL scanner to stop")
+	s.log.Info("WAVESMDL scanner stopped")
 }
 
-// scanBlock scans for a new WAVES block every ScanPeriod.
+// scanBlock scans for a new WAVESMDL block every ScanPeriod.
 // When a new block is found, it compares the block against our scanning
 // deposit addresses. If a matching deposit is found, it saves it to the DB.
-func (s *WAVESScanner) scanBlock(block *CommonBlock) (int, error) {
+func (s *WAVESMDLScanner) scanBlock(block *CommonBlock) (int, error) {
 	log := s.log.WithField("hash", block.Hash)
 	log = log.WithField("height", block.Height)
 
-	log.Debug("Scanning block")
+	log.Debug("WAVESMDLScanner, Scanning block")
 
-	dvs, err := s.Base.GetStorer().ScanBlock(block, CoinTypeWAVES)
+	dvs, err := s.Base.GetStorer().ScanBlock(block, CoinTypeWAVESMDL)
 	if err != nil {
-		log.WithError(err).Error("store.ScanBlock failed")
+		log.WithError(err).Error("WAVESMDLScanner.ScanBlock failed")
 		return 0, err
 	}
 
 	log = log.WithField("scannedDeposits", len(dvs))
-	log.Infof("Counted %d deposits from block", len(dvs))
+	log.Infof("WAVESMDLScanner, Counted %d deposits from block", len(dvs))
 
 	n := 0
 	for _, dv := range dvs {
@@ -76,8 +75,8 @@ func (s *WAVESScanner) scanBlock(block *CommonBlock) (int, error) {
 	return n, nil
 }
 
-// wavesBlock2CommonBlock convert wavescoin block to common block
-func wavesBlock2CommonBlock(block *model.Blocks) (*CommonBlock, error) {
+// wavesMDLBlock2CommonBlock convert wavescoin block to common block
+func wavesMDLBlock2CommonBlock(block *model.Blocks) (*CommonBlock, error) {
 	if block == nil {
 		return nil, ErrEmptyBlock
 	}
@@ -107,7 +106,7 @@ func wavesBlock2CommonBlock(block *model.Blocks) (*CommonBlock, error) {
 }
 
 // GetBlockCount returns the hash and height of the block in the longest (best) chain.
-func (s *WAVESScanner) GetBlockCount() (int64, error) {
+func (s *WAVESMDLScanner) GetBlockCount() (int64, error) {
 	rb, err := s.wavesRPCClient.GetLastBlocks()
 	if err != nil {
 		return 0, err
@@ -117,32 +116,32 @@ func (s *WAVESScanner) GetBlockCount() (int64, error) {
 }
 
 // getBlock returns block of given hash
-func (s *WAVESScanner) getBlock(seq int64) (*CommonBlock, error) {
+func (s *WAVESMDLScanner) getBlock(seq int64) (*CommonBlock, error) {
 	rb, err := s.wavesRPCClient.GetBlocksBySeq(seq)
 	if err != nil {
 		return nil, err
 	}
 
-	return wavesBlock2CommonBlock(rb)
+	return wavesMDLBlock2CommonBlock(rb)
 }
 
 // getBlockAtHeight returns that block at a specific height
-func (s *WAVESScanner) getBlockAtHeight(seq int64) (*CommonBlock, error) {
+func (s *WAVESMDLScanner) getBlockAtHeight(seq int64) (*CommonBlock, error) {
 	b, err := s.getBlock(seq)
 	return b, err
 }
 
 // getNextBlock returns the next block of given hash, return nil if next block does not exist
-func (s *WAVESScanner) getNextBlock(seq int64) (*CommonBlock, error) {
+func (s *WAVESMDLScanner) getNextBlock(seq int64) (*CommonBlock, error) {
 	b, err := s.wavesRPCClient.GetBlocksBySeq(seq + 1)
 	if err != nil {
 		return nil, err
 	}
-	return wavesBlock2CommonBlock(b)
+	return wavesMDLBlock2CommonBlock(b)
 }
 
 // waitForNextBlock scans for the next block until it is available
-func (s *WAVESScanner) waitForNextBlock(block *CommonBlock) (*CommonBlock, error) {
+func (s *WAVESMDLScanner) waitForNextBlock(block *CommonBlock) (*CommonBlock, error) {
 	log := s.log.WithField("blockHash", block.Hash)
 	log = log.WithField("blockHeight", block.Height)
 	log.Debug("Waiting for the next block")
@@ -178,59 +177,16 @@ func (s *WAVESScanner) waitForNextBlock(block *CommonBlock) (*CommonBlock, error
 }
 
 // AddScanAddress adds new scan address
-func (s *WAVESScanner) AddScanAddress(addr, coinType string) error {
+func (s *WAVESMDLScanner) AddScanAddress(addr, coinType string) error {
 	return s.Base.GetStorer().AddScanAddress(addr, coinType)
 }
 
 // GetScanAddresses returns the deposit addresses that need to scan
-func (s *WAVESScanner) GetScanAddresses() ([]string, error) {
-	return s.Base.GetStorer().GetScanAddresses(CoinTypeWAVES)
+func (s *WAVESMDLScanner) GetScanAddresses() ([]string, error) {
+	return s.Base.GetStorer().GetScanAddresses(CoinTypeWAVESMDL)
 }
 
 // GetDeposit returns deposit value channel.
-func (s *WAVESScanner) GetDeposit() <-chan DepositNote {
+func (s *WAVESMDLScanner) GetDeposit() <-chan DepositNote {
 	return s.Base.GetDeposit()
-}
-
-// WavesClient provides methods for sending coins
-type WavesClient struct {
-	MainNET string // defaults to "https://nodes.wavesnodes.com"
-}
-
-// NewWavesClient create waves rpc client
-func NewWavesClient(url string) (wc *WavesClient) {
-	if url != "" {
-		wc = &WavesClient{MainNET: url}
-	} else {
-		wc = &WavesClient{}
-	}
-	return wc
-}
-
-// GetTransaction returns transaction by txid
-func (c *WavesClient) GetTransaction(txid string) (*model.Transactions, error) {
-	transaction, _, err := client.NewTransactionsService(c.MainNET).GetTransactionsInfoID(txid)
-	return transaction, err
-}
-
-// GetBlocks get blocks from RPC
-func (c *WavesClient) GetBlocks(start, end int64) (blocks *[]model.Blocks, err error) {
-	blocks, _, err = client.NewBlocksService(c.MainNET).GetBlocksSeqFromTo(start, end)
-	return blocks, err
-}
-
-// GetBlocksBySeq get blocks by seq
-func (c *WavesClient) GetBlocksBySeq(seq int64) (block *model.Blocks, err error) {
-	block, _, err = client.NewBlocksService(c.MainNET).GetBlocksAtHeight(seq)
-	return block, err
-}
-
-// GetLastBlocks get last blocks
-func (c *WavesClient) GetLastBlocks() (blocks *model.Blocks, err error) {
-	blocks, _, err = client.NewBlocksService(c.MainNET).GetBlocksLast()
-	return blocks, err
-}
-
-// Shutdown the node
-func (c *WavesClient) Shutdown() {
 }

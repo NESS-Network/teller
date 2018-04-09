@@ -187,7 +187,7 @@ func (s *SKYScanner) AddScanAddress(addr, coinType string) error {
 
 // GetScanAddresses returns the deposit addresses that need to scan
 func (s *SKYScanner) GetScanAddresses() ([]string, error) {
-	return s.Base.GetStorer().GetScanAddresses(CoinTypeETH)
+	return s.Base.GetStorer().GetScanAddresses(CoinTypeSKY)
 }
 
 // GetDeposit returns deposit value channel.

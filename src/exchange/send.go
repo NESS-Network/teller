@@ -423,7 +423,13 @@ func (s *Send) calculateMDLDroplets(di DepositInfo) (uint64, error) {
 	case scanner.CoinTypeWAVES:
 		mdlAmt, err = CalculateWavesMDLValue(di.DepositValue, di.ConversionRate, s.cfg.MaxDecimals)
 		if err != nil {
-			log.WithError(err).Error("CalculateWavesMDLValue failed")
+			log.WithError(err).Error("CalculateWavesMDLValue CoinTypeWAVES failed")
+			return 0, err
+		}
+	case scanner.CoinTypeWAVESMDL:
+		mdlAmt, err = CalculateWavesMDLValue(di.DepositValue, di.ConversionRate, s.cfg.MaxDecimals)
+		if err != nil {
+			log.WithError(err).Error("CalculateWavesMDLValue CoinTypeWAVESMDL failed")
 			return 0, err
 		}
 	default:
