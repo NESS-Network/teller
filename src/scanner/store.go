@@ -20,6 +20,8 @@ const (
 	CoinTypeSKY = "SKY"
 	// CoinTypeWAVES is WAVES coin type
 	CoinTypeWAVES = "WAVES"
+	// CoinTypeWAVESMDL is WAVES_MDL coin type
+	CoinTypeWAVESMDL = "WAVES_MDL"
 )
 
 var (
@@ -47,6 +49,8 @@ func GetScanMetaBkt(coinType string) ([]byte, error) {
 		suffix = "sky"
 	case CoinTypeWAVES:
 		suffix = "waves"
+	case CoinTypeWAVESMDL:
+		suffix = "waves_mdl"
 	default:
 		return nil, ErrUnsupportedCoinType
 	}

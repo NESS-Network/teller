@@ -164,10 +164,12 @@ const (
 	testMDLEthRate      = "10"  // 10 MDL per ETH
 	testMDLSkyRate      = "100" // 100 MDL per SKY
 	testMDLWavesRate    = "100" // 100 MDL per WAVES
+	testMDLWavesMDLRate = "101" // 100 MDL per WAVES MDL
 	testMaxDecimals     = 0
 	testMDLAddr         = "2Wbi4wvxC4fkTYMsS2f6HaFfW4pafDjXcQW"
 	testMDLAddr2        = "hs1pyuNgxDLyLaZsnqzQG9U3DKdJsbzNpn"
 	testMDLAddr3        = "2Dc7kXtwBLr8GL4TSZKFCJM3xqEwnqH6m67"
+	testMDLAddr4        = "2fBXyJWKzwGcB8K42NMgpYmeou4vhiqME6f"
 	testWalletFile      = "test.wlt"
 	dbScanTimeout       = time.Second * 3
 	statusCheckTimeout  = time.Second * 3
@@ -183,6 +185,7 @@ var (
 		MDLEthExchangeRate:      testMDLEthRate,
 		MDLSkyExchangeRate:      testMDLSkyRate,
 		MDLWavesExchangeRate:    testMDLWavesRate,
+		MDLWavesMDLExchangeRate: testMDLWavesMDLRate,
 		TxConfirmationCheckWait: time.Millisecond * 100,
 		Wallet:                  testWalletFile,
 		SendEnabled:             true,
@@ -197,6 +200,8 @@ func newTestExchange(t *testing.T, log *logrus.Logger, db *bolt.DB) *Exchange {
 	escr := newDummyScanner()
 	sscr := newDummyScanner()
 	wscr := newDummyScanner()
+	wMDLscr := newDummyScanner()
+
 	multiplexer := scanner.NewMultiplexer(log)
 	err = multiplexer.AddScanner(bscr, scanner.CoinTypeBTC)
 	require.NoError(t, err)
@@ -205,6 +210,8 @@ func newTestExchange(t *testing.T, log *logrus.Logger, db *bolt.DB) *Exchange {
 	err = multiplexer.AddScanner(sscr, scanner.CoinTypeSKY)
 	require.NoError(t, err)
 	err = multiplexer.AddScanner(wscr, scanner.CoinTypeWAVES)
+	require.NoError(t, err)
+	err = multiplexer.AddScanner(wMDLscr, scanner.CoinTypeWAVESMDL)
 	require.NoError(t, err)
 
 	go testutil.CheckError(t, multiplexer.Multiplex)
@@ -240,6 +247,7 @@ func closeMultiplexer(e *Exchange) {
 	mp.GetScanner(scanner.CoinTypeETH).(*dummyScanner).stop()
 	mp.GetScanner(scanner.CoinTypeSKY).(*dummyScanner).stop()
 	mp.GetScanner(scanner.CoinTypeWAVES).(*dummyScanner).stop()
+	mp.GetScanner(scanner.CoinTypeWAVESMDL).(*dummyScanner).stop()
 	mp.Shutdown()
 }
 
@@ -258,6 +266,8 @@ func runExchangeMockStore(t *testing.T) (*Exchange, func(), *logrus_test.Hook) {
 	escr := newDummyScanner()
 	sscr := newDummyScanner()
 	wscr := newDummyScanner()
+	wMDLscr := newDummyScanner()
+
 	multiplexer := scanner.NewMultiplexer(log)
 	err := multiplexer.AddScanner(bscr, scanner.CoinTypeBTC)
 	require.NoError(t, err)
@@ -266,6 +276,8 @@ func runExchangeMockStore(t *testing.T) (*Exchange, func(), *logrus_test.Hook) {
 	err = multiplexer.AddScanner(sscr, scanner.CoinTypeSKY)
 	require.NoError(t, err)
 	err = multiplexer.AddScanner(wscr, scanner.CoinTypeWAVES)
+	require.NoError(t, err)
+	err = multiplexer.AddScanner(wMDLscr, scanner.CoinTypeWAVESMDL)
 	require.NoError(t, err)
 
 	go testutil.CheckError(t, multiplexer.Multiplex)
@@ -721,6 +733,138 @@ func TestExchangeWavesRunSend(t *testing.T) {
 		MDLSent:        1000000,
 		BuyMethod:      config.BuyMethodDirect,
 		ConversionRate: testMDLWavesRate,
+		DepositValue:   dn.Deposit.Value,
+		Deposit:        dn.Deposit,
+	}
+
+	require.Equal(t, expectedDeposit, di)
+	closeMultiplexer(e)
+}
+
+func TestExchangeWavesMDLRunSend(t *testing.T) {
+	e, shutdown, _ := runExchange(t)
+	defer shutdown()
+	defer e.Shutdown()
+
+	mdlAddr := testMDLAddr4
+	skyAddr := "foo-waves-mdl-addr"
+	mustBindAddressWavesMDL(t, e.store, mdlAddr, skyAddr)
+
+	var value = int64(1e6)
+	mdlSent, err := CalculateWavesMDLValue(value, testMDLWavesMDLRate, testMaxDecimals)
+	require.NoError(t, err)
+	txid := e.Sender.(*Send).sender.(*dummySender).predictTxid(t, mdlAddr, mdlSent)
+
+	dn := scanner.DepositNote{
+		Deposit: scanner.Deposit{
+			CoinType: scanner.CoinTypeWAVESMDL,
+			Address:  skyAddr,
+			Value:    value,
+			Height:   20,
+			Tx:       "foo-tx",
+			N:        2,
+		},
+		ErrC: make(chan error, 1),
+	}
+	mp := e.Receiver.(*Receive).multiplexer
+	mp.GetScanner(scanner.CoinTypeWAVESMDL).(*dummyScanner).addDeposit(dn)
+
+	// First loop calls saveIncomingDeposit
+	// nil is written to ErrC after this method finishes
+	err = <-dn.ErrC
+	require.NoError(t, err)
+
+	// Second loop calls processWaitSendDeposit
+	// It sends the coins, then confirms them
+
+	// Periodically check the database until we observe the sent deposit
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range time.Tick(dbCheckWaitTime) {
+			di, err := e.store.(*Store).getDepositInfo(dn.Deposit.ID())
+			log.Printf("loop getDepositInfo %v %v\n", di, err)
+			require.NoError(t, err)
+
+			if di.Status == StatusWaitConfirm {
+				return
+			}
+		}
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(dbScanTimeout):
+		t.Fatal("Waiting for sent deposit timed out")
+	}
+
+	// Check DepositInfo
+	di, err := e.store.(*Store).getDepositInfo(dn.Deposit.ID())
+	require.NoError(t, err)
+
+	require.NotEmpty(t, di.UpdatedAt)
+
+	expectedDeposit := DepositInfo{
+		Seq:            1,
+		CoinType:       scanner.CoinTypeWAVESMDL,
+		UpdatedAt:      di.UpdatedAt,
+		Status:         StatusWaitConfirm,
+		MDLAddress:     mdlAddr,
+		DepositAddress: dn.Deposit.Address,
+		DepositID:      dn.Deposit.ID(),
+		Txid:           txid,
+		MDLSent:        1000000,
+		BuyMethod:      config.BuyMethodDirect,
+		ConversionRate: testMDLWavesMDLRate,
+		DepositValue:   dn.Deposit.Value,
+		Deposit:        dn.Deposit,
+	}
+
+	require.Equal(t, expectedDeposit, di)
+
+	// Mark the deposit as confirmed
+	e.Sender.(*Send).sender.(*dummySender).setTxConfirmed(txid)
+
+	// Periodically check the database until we observe the confirmed deposit
+	done = make(chan struct{})
+	go func() {
+		defer close(done)
+		for range time.Tick(dbCheckWaitTime) {
+			di, err := e.store.(*Store).getDepositInfo(dn.Deposit.ID())
+			require.NoError(t, err)
+
+			if di.Status == StatusDone {
+				return
+			}
+		}
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(dbScanTimeout):
+		t.Fatal("Waiting for confirmed deposit timed out")
+	}
+
+	checkExchangerStatus(t, e, nil)
+
+	// Check DepositInfo
+	di, err = e.store.(*Store).getDepositInfo(dn.Deposit.ID())
+	require.NoError(t, err)
+
+	require.NotEmpty(t, di.UpdatedAt)
+
+	expectedDeposit = DepositInfo{
+		Seq:            1,
+		CoinType:       scanner.CoinTypeWAVESMDL,
+		UpdatedAt:      di.UpdatedAt,
+		Status:         StatusDone,
+		MDLAddress:     mdlAddr,
+		DepositAddress: dn.Deposit.Address,
+		DepositID:      dn.Deposit.ID(),
+		Txid:           txid,
+		MDLSent:        1000000,
+		BuyMethod:      config.BuyMethodDirect,
+		ConversionRate: testMDLWavesMDLRate,
 		DepositValue:   dn.Deposit.Value,
 		Deposit:        dn.Deposit,
 	}

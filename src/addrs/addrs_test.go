@@ -94,6 +94,26 @@ func testNewWavesAddrManager(t *testing.T, db *bolt.DB, log *logrus.Logger) (*Ad
 	return wavesA, addresses
 }
 
+func testNewWavesMDLAddrManager(t *testing.T, db *bolt.DB, log *logrus.Logger) (*Addrs, []string) {
+	addresses := []string{
+		"3PBpQFeKquE9ChmdqNsGBz3uVi7Efkee4zd",
+	}
+
+	wavesA, err := NewAddrs(log, db, addresses, "test_bucket_waves_mdl")
+	require.NoError(t, err)
+
+	addrMap := make(map[string]struct{}, len(wavesA.addresses))
+	for _, a := range wavesA.addresses {
+		addrMap[a] = struct{}{}
+	}
+
+	for _, addr := range addresses {
+		_, ok := addrMap[addr]
+		require.True(t, ok)
+	}
+	return wavesA, addresses
+}
+
 func TestNewBtcAddrs(t *testing.T) {
 	db, shutdown := testutil.PrepareDB(t)
 	defer shutdown()
@@ -230,11 +250,13 @@ func TestAddrManager(t *testing.T) {
 	ethGen, ethAddresses := testNewEthAddrManager(t, db, log)
 	skyGen, skyAddresses := testNewSkyAddrManager(t, db, log)
 	wavesGen, wavesAddresses := testNewWavesAddrManager(t, db, log)
+	wavesMDLGen, wavesMDLAddresses := testNewWavesMDLAddrManager(t, db, log)
 
 	typeB := "TOKENB"
 	typeE := "TOKENE"
 	typeS := "TOKENS"
 	typeW := "TOKENW"
+	typeW_MDL := "TOKENWMDL"
 
 	addrManager := NewAddrManager()
 	//add generator to addrManager
@@ -245,6 +267,8 @@ func TestAddrManager(t *testing.T) {
 	err = addrManager.PushGenerator(skyGen, typeS)
 	require.NoError(t, err)
 	err = addrManager.PushGenerator(wavesGen, typeW)
+	require.NoError(t, err)
+	err = addrManager.PushGenerator(wavesMDLGen, typeW_MDL)
 	require.NoError(t, err)
 
 	addrMap := make(map[string]struct{})
@@ -303,7 +327,7 @@ func TestAddrManager(t *testing.T) {
 		addrMap[a] = struct{}{}
 	}
 
-	// run out all addresses of typeE
+	// run out all addresses of typeW
 	for i := 0; i < len(wavesAddresses); i++ {
 		addr, err := addrManager.NewAddress(typeW)
 		require.NoError(t, err)
@@ -312,6 +336,23 @@ func TestAddrManager(t *testing.T) {
 		require.True(t, ok)
 	}
 	_, err = addrManager.NewAddress(typeW)
+	require.Equal(t, ErrDepositAddressEmpty, err)
+
+	//set typeW_MDL address into map
+	addrMap = make(map[string]struct{})
+	for _, a := range wavesMDLAddresses {
+		addrMap[a] = struct{}{}
+	}
+
+	// run out all addresses of typeW_MDL
+	for i := 0; i < len(wavesMDLAddresses); i++ {
+		addr, err := addrManager.NewAddress(typeW_MDL)
+		require.NoError(t, err)
+		// check if the addr still in the address pool
+		_, ok := addrMap[addr]
+		require.True(t, ok)
+	}
+	_, err = addrManager.NewAddress(typeW_MDL)
 	require.Equal(t, ErrDepositAddressEmpty, err)
 
 	//check not exists cointype

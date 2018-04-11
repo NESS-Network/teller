@@ -31,6 +31,10 @@ type dummyWavesAddrMgr struct {
 	Num uint64
 }
 
+type dummyWavesMDLAddrMgr struct {
+	Num uint64
+}
+
 func (db *dummyBtcAddrMgr) Remaining() uint64 {
 	return db.Num
 }
@@ -41,6 +45,9 @@ func (db *dummySkyAddrMgr) Remaining() uint64 {
 	return db.Num
 }
 func (db *dummyWavesAddrMgr) Remaining() uint64 {
+	return db.Num
+}
+func (db *dummyWavesMDLAddrMgr) Remaining() uint64 {
 	return db.Num
 }
 
@@ -68,12 +75,13 @@ func (dps dummyDepositStatusGetter) GetDepositStatusDetail(flt exchange.DepositF
 
 func (dps dummyDepositStatusGetter) GetDepositStats() (*exchange.DepositStats, error) {
 	stats := &exchange.DepositStats{
-		TotalBTCReceived:   0,
-		TotalETHReceived:   0,
-		TotalSKYReceived:   0,
-		TotalWAVESReceived: 0,
-		TotalMDLSent:       0,
-		TotalTransactions:  0,
+		TotalBTCReceived:      0,
+		TotalETHReceived:      0,
+		TotalSKYReceived:      0,
+		TotalWAVESReceived:    0,
+		TotalWAVESMDLReceived: 0,
+		TotalMDLSent:          0,
+		TotalTransactions:     0,
 	}
 
 	for _, dpi := range dps.dpis {
@@ -87,6 +95,8 @@ func (dps dummyDepositStatusGetter) GetDepositStats() (*exchange.DepositStats, e
 				stats.TotalSKYReceived += dpi.DepositValue
 			case scanner.CoinTypeWAVES:
 				stats.TotalWAVESReceived += dpi.DepositValue
+			case scanner.CoinTypeWAVESMDL:
+				stats.TotalWAVESMDLReceived += dpi.DepositValue
 			}
 			stats.TotalMDLSent += int64(dpi.MDLSent)
 			stats.TotalTransactions++
@@ -136,10 +146,16 @@ var statsDpis = []exchange.DepositInfo{
 		MDLSent:      500,
 		Status:       exchange.StatusDone,
 	},
+	{
+		CoinType:     scanner.CoinTypeWAVESMDL,
+		DepositValue: 4000,
+		MDLSent:      500,
+		Status:       exchange.StatusDone,
+	},
 }
 var statsCfg = Config{
 	"localhost:1234",
-	10, 11, 12, 13, 14, decimal.NewFromFloat(10.5), 10,
+	10, 11, 12, 13, 14, 15, decimal.NewFromFloat(10.5), 10,
 }
 
 func TestRunMonitor(t *testing.T) {
@@ -174,7 +190,7 @@ func TestRunMonitor(t *testing.T) {
 	dummyDps := dummyDepositStatusGetter{dpis: dpis}
 
 	log, _ := testutil.NewLogger(t)
-	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{}, &dummyDps, &dummyScanAddrs{})
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{}, &dummyWavesMDLAddrMgr{}, &dummyDps, &dummyScanAddrs{})
 
 	err := setupTestServer(t, m)
 	require.NoError(t, err)
@@ -269,7 +285,7 @@ func TestMonitorDepositStats(t *testing.T) {
 	dummyDps := dummyDepositStatusGetter{dpis: statsDpis}
 
 	log, _ := testutil.NewLogger(t)
-	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyWavesMDLAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
 	err := setupTestServer(t, m)
 	require.NoError(t, err)
 
@@ -285,9 +301,10 @@ func TestMonitorDepositStats(t *testing.T) {
 	require.Equal(t, statsDpis[2].DepositValue, stats.TotalETHReceived)
 	require.Equal(t, statsDpis[3].DepositValue, stats.TotalSKYReceived)
 	require.Equal(t, statsDpis[4].DepositValue, stats.TotalWAVESReceived)
-	require.Equal(t, int64(4), stats.TotalTransactions)
+	require.Equal(t, statsDpis[5].DepositValue, stats.TotalWAVESMDLReceived)
+	require.Equal(t, int64(5), stats.TotalTransactions)
 
-	mdlTotal := statsDpis[1].MDLSent + statsDpis[2].MDLSent + statsDpis[3].MDLSent + statsDpis[4].MDLSent
+	mdlTotal := statsDpis[1].MDLSent + statsDpis[2].MDLSent + statsDpis[3].MDLSent + statsDpis[4].MDLSent + statsDpis[5].MDLSent
 	require.Equal(t, mdlTotal, uint64(stats.TotalMDLSent))
 
 	defer func() {
@@ -303,7 +320,7 @@ func TestMonitorWebReadyDepositStats(t *testing.T) {
 	dummyDps := dummyDepositStatusGetter{dpis: statsDpis}
 
 	log, _ := testutil.NewLogger(t)
-	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyWavesMDLAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
 	err := setupTestServer(t, m)
 
 	require.NoError(t, err)
@@ -321,9 +338,10 @@ func TestMonitorWebReadyDepositStats(t *testing.T) {
 	require.Equal(t, "0.000200011", webStats.TotalETHReceived)
 	require.Equal(t, "0.030012", webStats.TotalSKYReceived)
 	require.Equal(t, "0.00004013", webStats.TotalWAVESReceived)
-	require.Equal(t, "0.001414", webStats.TotalMDLSent)
-	require.Equal(t, "10.5000707", webStats.TotalUSDReceived)
-	require.Equal(t, int64(14), webStats.TotalTransactions)
+	require.Equal(t, "0.00004014", webStats.TotalWAVESMDLReceived)
+	require.Equal(t, "0.001915", webStats.TotalMDLSent)
+	require.Equal(t, "10.50009575", webStats.TotalUSDReceived)
+	require.Equal(t, int64(15), webStats.TotalTransactions)
 
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)
@@ -364,7 +382,7 @@ func TestMonitorEthTotalStatsHandler(t *testing.T) {
 	dummyDps := dummyDepositStatusGetter{dpis: statsDpis}
 
 	log, _ := testutil.NewLogger(t)
-	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
+	m := New(log, statsCfg, &dummyBtcAddrMgr{10}, &dummyEthAddrMgr{10}, &dummySkyAddrMgr{10}, &dummyWavesAddrMgr{10}, &dummyWavesMDLAddrMgr{10}, &dummyDps, &dummyScanAddrs{})
 	err := setupTestServer(t, m)
 
 	require.NoError(t, err)
@@ -379,7 +397,7 @@ func TestMonitorEthTotalStatsHandler(t *testing.T) {
 	err = json.NewDecoder(rsp.Body).Decode(&j)
 	require.NoError(t, err)
 
-	require.Equal(t, map[string]string{"eth": "0.105000707"}, j)
+	require.Equal(t, map[string]string{"eth": "0.1050009575"}, j)
 
 	defer func() {
 		testutil.CheckError(t, rsp.Body.Close)

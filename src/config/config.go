@@ -259,13 +259,13 @@ func (c MDLExchanger) validate() []error {
 		errs = append(errs, fmt.Errorf("mdl_exchanger.mdl_sky_exchange_rate invalid: %v", err))
 	}
 
-	// if _, err := mathutil.ParseRate(c.MDLWavesExchangeRate); err != nil {
-	// 	errs = append(errs, fmt.Errorf("mdl_exchanger.mdl_waves_exchange_rate invalid: %v", err))
-	// }
-	//
-	// if _, err := mathutil.ParseRate(c.MDLWavesMDLExchangeRate); err != nil {
-	// 	errs = append(errs, fmt.Errorf("mdl_exchanger.mdl_waves_mdl_exchange_rate invalid: %v", err))
-	// }
+	if _, err := mathutil.ParseRate(c.MDLWavesExchangeRate); err != nil {
+		errs = append(errs, fmt.Errorf("mdl_exchanger.mdl_waves_exchange_rate invalid: %v", err))
+	}
+
+	if _, err := mathutil.ParseRate(c.MDLWavesMDLExchangeRate); err != nil {
+		errs = append(errs, fmt.Errorf("mdl_exchanger.mdl_waves_mdl_exchange_rate invalid: %v", err))
+	}
 
 	if c.MaxDecimals < 0 {
 		errs = append(errs, errors.New("mdl_exchanger.max_decimals can't be negative"))
@@ -343,14 +343,15 @@ func (c Web) Validate() error {
 
 // AdminPanel config for the admin panel AdminPanel
 type AdminPanel struct {
-	Host          string `mapstructure:"host"`
-	FixBtcValue   int64  `mapstructure:"fix_btc_value"`
-	FixEthValue   int64  `mapstructure:"fix_eth_value"`
-	FixSkyValue   int64  `mapstructure:"fix_sky_value"`
-	FixWavesValue int64  `mapstructure:"fix_waves_value"`
-	FixMdlValue   int64  `mapstructure:"fix_mdl_value"`
-	FixUsdValue   string `mapstructure:"fix_usd_value"`
-	FixTxValue    int64  `mapstructure:"fix_tx_value"`
+	Host             string `mapstructure:"host"`
+	FixBtcValue      int64  `mapstructure:"fix_btc_value"`
+	FixEthValue      int64  `mapstructure:"fix_eth_value"`
+	FixSkyValue      int64  `mapstructure:"fix_sky_value"`
+	FixWavesValue    int64  `mapstructure:"fix_waves_value"`
+	FixWavesMDLValue int64  `mapstructure:"fix_waves_mdl_value"`
+	FixMdlValue      int64  `mapstructure:"fix_mdl_value"`
+	FixUsdValue      string `mapstructure:"fix_usd_value"`
+	FixTxValue       int64  `mapstructure:"fix_tx_value"`
 }
 
 // Dummy config for the fake sender and scanner
