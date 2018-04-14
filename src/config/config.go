@@ -485,6 +485,9 @@ func (c Config) Validate() error {
 			if c.WavesMDLRPC.Port == "" {
 				oops("waves_mdl_rpc.port missing")
 			}
+			if c.WavesMDLRPC.Protocol == "" {
+				oops("waves_mdl_rpc.protocol missing")
+			}
 		}
 
 	}

@@ -21,7 +21,7 @@ const (
 	// CoinTypeWAVES is WAVES coin type
 	CoinTypeWAVES = "WAVES"
 	// CoinTypeWAVESMDL is WAVES_MDL coin type
-	CoinTypeWAVESMDL = "WAVES_MDL"
+	CoinTypeWAVESMDL = "MDL.life"
 )
 
 var (

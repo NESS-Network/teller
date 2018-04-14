@@ -412,6 +412,11 @@ func BindHandler(s *HTTPServer) http.HandlerFunc {
 				errorResponse(ctx, w, http.StatusBadRequest, fmt.Errorf("Oops, there seems to be an issue. The selected coin type %s is not enabled. We are working on a fix, please try again in a couple of hours", scanner.CoinTypeWAVES))
 				return
 			}
+		case scanner.CoinTypeWAVESMDL:
+			if !s.cfg.WavesMDLRPC.Enabled {
+				errorResponse(ctx, w, http.StatusBadRequest, fmt.Errorf("Oops, there seems to be an issue. The selected coin type %s is not enabled. We are working on a fix, please try again in a couple of hours", scanner.CoinTypeWAVES))
+				return
+			}
 		case "":
 			errorResponse(ctx, w, http.StatusBadRequest, errors.New("Missing coin_type"))
 			return
