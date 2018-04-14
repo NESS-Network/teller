@@ -1065,3 +1065,51 @@ func TestCalculateWavesMDLValue(t *testing.T) {
 		})
 	}
 }
+
+
+func TestCalculateWaves_MDLLIFE_MDLValue(t *testing.T) {
+	//The WAVES price is listed as 10^8. (1e8=1 WAVES)
+	cases := []struct {
+		maxDecimals int
+		droplets    int64
+		rate        string
+		result      uint64
+		err         error
+	}{
+		{
+			maxDecimals: 0,
+			droplets:    10000000, //0.1 MDL.life //http://node.wavesbi.com:6869/blocks/seq/959412/959419 http://wavesgo.com/transactions/38dwB49fQ2bY33z6V36exD2u2JBgUoSoauYThyiV8Lfi
+			rate:        "1",
+			result:      1e5, //0.1 MDL
+		},
+	}
+
+	for _, tc := range cases {
+		name := fmt.Sprintf("droplets=%d rate=%s maxDecimals=%d", tc.droplets, tc.rate, tc.maxDecimals)
+		t.Run(name, func(t *testing.T) {
+			result, err := CalculateWavesMDLValue(tc.droplets, tc.rate, tc.maxDecimals)
+			if tc.err == nil {
+
+				expectedAmtCoins, err := droplet.ToString(result)
+				if err != nil {
+					t.Error("droplet.ToString failed")
+					return
+				}
+				expectedDecimal := decimal.New(int64(tc.result), -6)
+				expectedStr := expectedDecimal.StringFixed(6)
+
+				droptletsDecimal := decimal.New(int64(tc.droplets/100), -6)
+				dropletsAmtCoins := droptletsDecimal.StringFixed(6)
+
+				require.NoError(t, err)
+
+				require.Equal(t, expectedStr, expectedAmtCoins, "expected(%s) != actual(%s), coins(%s), rate(%s)", expectedStr, expectedAmtCoins, dropletsAmtCoins, tc.rate)
+				require.Equal(t, tc.result, result, "%d != %d")
+			} else {
+				require.Error(t, err)
+				require.Equal(t, tc.err, err)
+				require.Equal(t, uint64(0), result, "%d != 0", result)
+			}
+		})
+	}
+}
