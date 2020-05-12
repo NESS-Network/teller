@@ -2,7 +2,7 @@
 # Defaults are shown, commented out
 # Some values have no defaults and must be filled in
 
-debug = true
+debug = false
 profile = false
 enabled = true
 # logfile = "./teller.log"  # logfile can be an absolute path or relative to the working directory
@@ -18,7 +18,7 @@ max_bound_addrs = 2 # 0 means unlimited
 bind_enabled = true # Disable this to prevent binding of new addresses
 
 [mdl_rpc]
-address = "127.0.0.1:8330"
+address = "127.0.0.1:8320"
 
 [btc_rpc]
 enabled = false
@@ -38,15 +38,16 @@ server = "127.0.0.1" # REQUIRED
 port = "6430" # REQUIRED
 
 [waves_rpc]
-enabled = true # not yet implemented
-server = "127.0.0.1" # REQUIRED
-port = "6860" # REQUIRED
-protocol = "http" # REQUIRED
+enabled = false
+server = "nodes.wavesnodes.com" # REQUIRED
+port = "443" # REQUIRED
+protocol = "https" # REQUIRED
 
 [waves_mdl_rpc]
 enabled = false # not yet implemented
-server = "127.0.0.1" # REQUIRED
-port = "8081" # REQUIRED
+server = "nodes.wavesnodes.com" # REQUIRED
+port = "443" # REQUIRED
+protocol = "https" # REQUIRED
 
 [btc_scanner]
 scan_period = "20s"
@@ -60,7 +61,7 @@ confirmations_required = 3
 
 [sky_scanner]
 scan_period = "5s"
-initial_scan_height=18310
+initial_scan_height=137000
 confirmations_required = 0
 
 [waves_scanner]
@@ -70,7 +71,7 @@ confirmations_required = 1
 
 [waves_mdl_scanner]
 scan_period = "5s"
-initial_scan_height=4654259
+initial_scan_height=960709
 confirmations_required = 1
 
 [mdl_exchanger]
@@ -96,13 +97,13 @@ mdl_waves_exchange_name = "WAVES"
 mdl_waves_exchange_rate = "88" # REQUIRED: MDL/WAVES exchange rate as a string, can be an int, float or a rational fraction
 mdl_waves_exchange_rate_usd = ""  # TODO:
 mdl_waves_exchange_label = "Waves (Experimental)"
-mdl_waves_exchange_enabled = true
+mdl_waves_exchange_enabled = false
 
 mdl_waves_mdl_exchange_name = "MDL.life"
 mdl_waves_mdl_exchange_rate = "1" # REQUIRED: MDL/WAVES MDL exchange rate as a string, can be an int, float or a rational fraction
 mdl_waves_mdl_exchange_rate_usd = "" # TODO:
-mdl_waves_mdl_exchange_label = "MDL.life - pre-MDL token on Waves (Temporary Disabled, but coming soon)"
-mdl_waves_mdl_exchange_enabled = false
+mdl_waves_mdl_exchange_label = "MDL.life - pre-MDL token on Waves (Testing)"
+mdl_waves_mdl_exchange_enabled = true
 
 wallet = "mdl-hot-wallet.wlt" # REQUIRED: path to local hot wallet file
 # max_decimals = 3  # Number of decimal places to truncate MDL to
@@ -112,7 +113,7 @@ send_enabled = true # Disable this to disable sending of coins (all other proces
 
 [web]
 # behind_proxy = false  # This must be set to true when behind a proxy for ratelimiting to work
-http_addr = ":1550"
+http_addr = ":7071"
 # static_dir = "./web/build"
 # throttle_max = 60
 # throttle_duration = "60s"

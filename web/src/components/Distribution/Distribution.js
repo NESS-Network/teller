@@ -46,7 +46,7 @@ class Distribution extends React.Component {
     super();
     this.state = {
       status: [],
-      coinType: 'ETH',
+      coinType: 'SKY',
       mdlAddress: null,
       btcAddress: '',
       statusIsOpen: false,
@@ -260,7 +260,7 @@ class Distribution extends React.Component {
                     options={[
                       { value: 'BTC', label: 'Bitcoin', disabled: true },
                       { value: 'ETH', label: 'Ethereum', disabled: true  },
-                      { value: 'SKY', label: 'Skycoin', disabled: true },
+                      { value: 'SKY', label: 'Skycoin', disabled: false },
                       { value: 'WAVES', label: 'Waves (Temporary Disabled)', disabled: true },
                       { value: 'MDL.life', label: 'MDL.life (pre-MDL token on Waves)', disabled: true },
                     ]}
