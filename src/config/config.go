@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/MDLlife/MDL/src/visor"
 	"github.com/MDLlife/MDL/src/wallet"
 	"github.com/MDLlife/teller/src/util/mathutil"
+	"github.com/MDLlife/MDL/src/params"
 )
 
 const (
@@ -101,6 +101,7 @@ type Teller struct {
 	// Allow address binding
 	BindEnabled bool `mapstructure:"bind_enabled"`
 	// Currently supported purchase methods
+	AndroidEnabled bool `mapstructure:"android_enabled"`
 }
 
 // MDLRPC config for MDL daemon node RPC
@@ -271,8 +272,8 @@ func (c MDLExchanger) validate() []error {
 		errs = append(errs, errors.New("mdl_exchanger.max_decimals can't be negative"))
 	}
 
-	if uint64(c.MaxDecimals) > visor.MaxDropletPrecision {
-		errs = append(errs, fmt.Errorf("mdl_exchanger.max_decimals is larger than visor.MaxDropletPrecision=%d", visor.MaxDropletPrecision))
+	if uint8(c.MaxDecimals) > params.UserVerifyTxn.MaxDropletPrecision {
+		errs = append(errs, fmt.Errorf("mdl_exchanger.max_decimals is larger than MaxDropletPrecision=%d", params.UserVerifyTxn.MaxDropletPrecision))
 	}
 
 	if err := ValidateBuyMethod(c.BuyMethod); err != nil {

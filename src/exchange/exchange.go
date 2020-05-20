@@ -7,11 +7,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MDLlife/MDL/src/api/cli"
+	//"github.com/MDLlife/MDL/src/cli"
 
 	"github.com/MDLlife/teller/src/config"
 	"github.com/MDLlife/teller/src/scanner"
 	"github.com/MDLlife/teller/src/sender"
+	"github.com/MDLlife/MDL/src/readable"
 )
 
 const (
@@ -53,7 +54,7 @@ type Exchanger interface {
 	GetBindNum(mdlAddr string) (int, error)
 	GetDepositStats() (*DepositStats, error)
 	Status() error
-	Balance() (*cli.Balance, error)
+	Balance() (*readable.BalancePair, error)
 }
 
 // Exchange encompasses an entire coin<>mdl deposit-process-send flow
@@ -290,7 +291,7 @@ func (e *Exchange) GetDepositStats() (*DepositStats, error) {
 }
 
 // Balance returns the number of coins left in the OTC wallet
-func (e *Exchange) Balance() (*cli.Balance, error) {
+func (e *Exchange) Balance() (*readable.BalancePair, error) {
 	return e.Sender.Balance()
 }
 

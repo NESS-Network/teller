@@ -95,7 +95,7 @@ func (s *DummyScanner) addDepositHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := cipher.BitcoinDecodeBase58Address(addr); err != nil {
+	if _, err := cipher.DecodeBase58Address(addr); err != nil {
 		httputil.ErrResponse(w, http.StatusBadRequest, "invalid addr")
 		return
 	}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -527,6 +526,7 @@ func StatusHandler(s *HTTPServer) http.HandlerFunc {
 // ConfigResponse http response for /api/config
 type ConfigResponse struct {
 	Enabled                  bool                     `json:"enabled"`
+	AndroidEnabled           bool                     `json:"android_enabled"`
 	Available                float64                  `json:"available"`
 	BtcConfirmationsRequired int64                    `json:"btc_confirmations_required"`
 	EthConfirmationsRequired int64                    `json:"eth_confirmations_required"`
@@ -664,12 +664,11 @@ func ConfigHandler(s *HTTPServer) http.HandlerFunc {
 
 		balance := 0.0
 		if b, err := s.exchanger.Balance(); err == nil {
-			if balance, err = strconv.ParseFloat(b.Coins, 3); err != nil {
-				balance = 0.0
-			}
+			balance = float64(b.Confirmed.Coins)
 		}
 		if err := httputil.JSONResponse(w, ConfigResponse{
 			Enabled:                  s.cfg.Teller.BindEnabled,
+			AndroidEnabled:           s.cfg.Teller.AndroidEnabled,
 			Available:                balance,
 			BtcConfirmationsRequired: s.cfg.BtcScanner.ConfirmationsRequired,
 			EthConfirmationsRequired: s.cfg.EthScanner.ConfirmationsRequired,
@@ -709,6 +708,7 @@ func ExchangeStatusHandler(s *HTTPServer) http.HandlerFunc {
 		ctx := r.Context()
 		log := logger.FromContext(ctx)
 
+
 		if !validMethod(ctx, w, r, []string{http.MethodGet}) {
 			return
 		}
@@ -722,10 +722,11 @@ func ExchangeStatusHandler(s *HTTPServer) http.HandlerFunc {
 		// Errors that are not RPCErrors are transient and common, such as
 		// exchange.ErrNotConfirmed, which will happen frequently and temporarily.
 		switch err.(type) {
-		case sender.RPCError:
+		case sender.APIError:
 			errorMsg = err.Error()
 		default:
 		}
+
 
 		// Get the wallet balance, but ignore any error. If an error occurs,
 		// return a balance of 0
@@ -735,8 +736,8 @@ func ExchangeStatusHandler(s *HTTPServer) http.HandlerFunc {
 		if err != nil {
 			log.WithError(err).Error("s.exchange.Balance failed")
 		} else {
-			coins = bal.Coins
-			hours = bal.Hours
+			coins, _ = droplet.ToString(bal.Confirmed.Coins)
+			hours = fmt.Sprint(bal.Confirmed.Hours)
 		}
 
 		resp := ExchangeStatusResponse{

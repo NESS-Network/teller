@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MDLlife/MDL/src/api/cli"
-	"github.com/MDLlife/MDL/src/api/webrpc"
+	"github.com/MDLlife/MDL/src/cli"
+	"github.com/MDLlife/MDL/src/api"
 	"github.com/MDLlife/MDL/src/cipher"
 	"github.com/MDLlife/MDL/src/coin"
 	"github.com/MDLlife/MDL/src/visor"

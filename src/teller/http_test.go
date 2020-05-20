@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/MDLlife/MDL/src/api/cli"
+	"github.com/MDLlife/MDL/src/cli"
 
 	"bytes"
 

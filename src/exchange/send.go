@@ -1,27 +1,25 @@
 package exchange
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MDLlife/MDL/src/api/cli"
-	"github.com/MDLlife/MDL/src/coin"
 	"github.com/MDLlife/MDL/src/util/droplet"
 
 	"github.com/MDLlife/teller/src/config"
 	"github.com/MDLlife/teller/src/scanner"
 	"github.com/MDLlife/teller/src/sender"
 	"github.com/MDLlife/teller/src/util/mathutil"
+	"github.com/MDLlife/MDL/src/readable"
 )
 
 // Sender is a component for sending coins
 type Sender interface {
 	Status() error
-	Balance() (*cli.Balance, error)
+	Balance() (*readable.BalancePair, error)
 }
 
 // SendRunner a Sender than can be run
@@ -42,6 +40,13 @@ type Send struct {
 	depositChan chan DepositInfo
 	statusLock  sync.RWMutex
 	status      error
+}
+
+type TransactionInfo struct {
+	txId string
+	encodedTransaction string
+	amount uint64
+	address string
 }
 
 // NewSend creates exchange service
@@ -210,7 +215,7 @@ func (s *Send) processWaitSendDeposit(di DepositInfo) error {
 		default:
 		}
 
-		log.Info("handleDepositInfoState")
+		//log.Info("handleDepositInfoState")
 
 		var err error
 		di, err = s.handleDepositInfoState(di)
@@ -219,9 +224,9 @@ func (s *Send) processWaitSendDeposit(di DepositInfo) error {
 		s.setStatus(err)
 
 		switch err.(type) {
-		case sender.RPCError:
-			// Treat mdl RPC/CLI errors as temporary.
-			// Some RPC/CLI errors are hypothetically permanent,
+		case sender.APIError:
+			// Treat mdl API/CLI errors as temporary.
+			// Some API/CLI errors are hypothetically permanent,
 			// but most likely it is an insufficient wallet balance or
 			// the mdl node is unavailable.
 			// A permanent error suggests a bug in mdl or teller so can be fixed.
@@ -294,33 +299,33 @@ func (s *Send) handleDepositInfoState(di DepositInfo) (DepositInfo, error) {
 		// The mdlTx contains one output sent to the destination address,
 		// so this check is safe.
 		// It is verified earlier by verifyCreatedTransaction
-		var mdlSent uint64
-		for _, o := range mdlTx.Out {
-			if o.Address.String() == di.MDLAddress {
-				mdlSent = o.Coins
-				break
-			}
-		}
-
-		if mdlSent == 0 {
-			err := errors.New("No output to destination address found in transaction")
-			log.WithError(err).Error(err)
-			return di, err
-		}
+		//var mdlSent uint64
+		//for _, o := range mdlTx.Out {
+		//	if o.Address.String() == di.MDLAddress {
+		//		mdlSent = o.Coins
+		//		break
+		//	}
+		//}
+		//
+		//if mdlSent == 0 {
+		//	err := errors.New("No output to destination address found in transaction")
+		//	log.WithError(err).Error(err)
+		//	return di, err
+		//}
 
 		// Within a bolt.DB transaction, update the db then send the coins
 		// If the send fails, the data is rolled back
 		// If the db save fails, no coins had been sent
 		di, err = s.store.UpdateDepositInfoCallback(di.DepositID, func(di DepositInfo) DepositInfo {
 			di.Status = StatusWaitConfirm
-			di.Txid = mdlTx.TxIDHex()
-			di.MDLSent = mdlSent
+			di.Txid = mdlTx.txId
+			di.MDLSent = mdlTx.amount
 			return di
 		}, func(di DepositInfo) error {
 			// NOTE: broadcastTransaction retries indefinitely on error
 			// If the mdl node is not reachable, this will block,
 			// which will also block the database since it's in a transaction
-			rsp, err := s.broadcastTransaction(mdlTx)
+			rsp, err := s.broadcastTransaction(mdlTx.encodedTransaction)
 			if err != nil {
 				log.WithError(err).Error("broadcastTransaction failed")
 				return err
@@ -328,8 +333,8 @@ func (s *Send) handleDepositInfoState(di DepositInfo) (DepositInfo, error) {
 
 			// Invariant assertion: do not return this as an error, since
 			// coins have been sent. This should never occur.
-			if rsp.Txid != mdlTx.TxIDHex() {
-				log.Error("CRITICAL ERROR: BroadcastTxResponse.Txid != mdlTx.TxIDHex()")
+			if rsp.Txid != mdlTx.txId {
+				log.Error("CRITICAL ERROR: encodedTrans != mdlTx")
 			}
 
 			return nil
@@ -439,7 +444,7 @@ func (s *Send) calculateMDLDroplets(di DepositInfo) (uint64, error) {
 	return mdlAmt, nil
 }
 
-func (s *Send) createTransaction(di DepositInfo) (*coin.Transaction, error) {
+func (s *Send) createTransaction(di DepositInfo) (*TransactionInfo, error) {
 	log := s.log.WithField("deposit", di)
 
 	// This should never occur, the DepositInfo is saved with a MDLAddress
@@ -482,45 +487,51 @@ func (s *Send) createTransaction(di DepositInfo) (*coin.Transaction, error) {
 		return nil, err
 	}
 
-	log = log.WithField("transactionOutput", tx.Out)
+	log = log.WithField("transactionOutput", tx)
 
-	if err := verifyCreatedTransaction(tx, di, mdlAmt); err != nil {
-		log.WithError(err).Error("verifyCreatedTransaction failed")
-		return nil, err
+	//if err := verifyCreatedTransaction(tx, di, mdlAmt); err != nil {
+	//	log.WithError(err).Error("verifyCreatedTransaction failed")
+	//	return nil, err
+	//}
+
+	txInfo := &TransactionInfo{
+		txId: tx.Transaction.TxID,
+		encodedTransaction:tx.EncodedTransaction,
+		amount:mdlAmt,
+		address:di.MDLAddress,
 	}
-
-	return tx, nil
+	return txInfo, nil
 }
 
-func verifyCreatedTransaction(tx *coin.Transaction, di DepositInfo, mdlAmt uint64) error {
-	// Check invariant assertions:
-	// The transaction should contain one output to the destination address.
-	// It may or may not have a change output.
-	count := 0
+//func verifyCreatedTransaction(tx *coin.Transaction, di DepositInfo, mdlAmt uint64) error {
+//	// Check invariant assertions:
+//	// The transaction should contain one output to the destination address.
+//	// It may or may not have a change output.
+//	count := 0
+//
+//	for _, o := range tx.Out {
+//		if o.Address.String() != di.MDLAddress {
+//			continue
+//		}
+//
+//		count++
+//
+//		if o.Coins != mdlAmt {
+//			return errors.New("CreateTransaction transaction coins are different")
+//		}
+//	}
+//
+//	if count == 0 {
+//		return fmt.Errorf("CreateTransaction transaction has no output to address %s", di.MDLAddress)
+//	} else if count > 1 {
+//		return fmt.Errorf("CreateTransaction transaction has multiple outputs to address %s", di.MDLAddress)
+//	}
+//
+//	return nil
+//}
 
-	for _, o := range tx.Out {
-		if o.Address.String() != di.MDLAddress {
-			continue
-		}
-
-		count++
-
-		if o.Coins != mdlAmt {
-			return errors.New("CreateTransaction transaction coins are different")
-		}
-	}
-
-	if count == 0 {
-		return fmt.Errorf("CreateTransaction transaction has no output to address %s", di.MDLAddress)
-	} else if count > 1 {
-		return fmt.Errorf("CreateTransaction transaction has multiple outputs to address %s", di.MDLAddress)
-	}
-
-	return nil
-}
-
-func (s *Send) broadcastTransaction(tx *coin.Transaction) (*sender.BroadcastTxResponse, error) {
-	log := s.log.WithField("txid", tx.TxIDHex())
+func (s *Send) broadcastTransaction(tx string) (*sender.BroadcastTxResponse, error) {
+	log := s.log.WithField("txid", tx)
 
 	log.Info("Broadcasting mdl transaction")
 
@@ -546,7 +557,7 @@ func (s *Send) broadcastTransaction(tx *coin.Transaction) (*sender.BroadcastTxRe
 }
 
 // Balance returns the number of coins left in the OTC wallet
-func (s *Send) Balance() (*cli.Balance, error) {
+func (s *Send) Balance() (*readable.BalancePair, error) {
 	return s.sender.Balance()
 }
 

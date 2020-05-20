@@ -10,8 +10,8 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
-	"github.com/skycoin/skycoin/src/cipher"
-	"github.com/skycoin/skycoin/src/cipher/base58"
+	"github.com/SkycoinProject/skycoin/src/cipher"
+	//"github.com/SkycoinProject/skycoin/src/cipher/base58"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -64,14 +64,15 @@ func verifyWAVESAddresses(addrs []string) error {
 		// 	return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
 		// }
 
-		b, err := base58.Base582Hex(addr)
-		if err != nil {
-			return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
-		}
-		_, err = addressFromBytes(b)
-		if err != nil {
-			return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
-		}
+		//b, err := base58.Base582Hex(addr)
+		//b  := base58.Encode([]byte(addr))
+		//if err != nil {
+		//	return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
+		//}
+		//_, err = addressFromBytes(b)
+		//if err != nil {
+		//	return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
+		//}
 
 		addrMap[addr] = struct{}{}
 	}

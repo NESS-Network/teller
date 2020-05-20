@@ -7,8 +7,9 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/modeneis/waves-go-client/model"
-	"github.com/skycoin/skycoin/src/api/webrpc"
-	"github.com/skycoin/skycoin/src/visor"
+	//"github.com/skycoin/skycoin/src/api"
+	"github.com/MDLlife/MDL/src/readable"
+	//"github.com/SkycoinProject/skycoin/src/readable"
 )
 
 // Scanner provids apis for interacting with a scan service
@@ -27,10 +28,10 @@ type BtcRPCClient interface {
 
 // SkyRPCClient rpcclient interface
 type SkyRPCClient interface {
-	GetTransaction(txid string) (*webrpc.TxnResult, error)
-	GetBlocks(start, end uint64) (*visor.ReadableBlocks, error)
-	GetBlocksBySeq(seq uint64) (*visor.ReadableBlock, error)
-	GetLastBlocks() (*visor.ReadableBlock, error)
+	GetTransaction(txid string) (*readable.TransactionWithStatus, error)
+	GetBlocks(start, end uint64) (*readable.Blocks, error)
+	GetBlocksBySeq(seq uint64) (*readable.Block, error)
+	GetLastBlocks() (*readable.Block, error)
 	Shutdown()
 }
 

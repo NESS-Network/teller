@@ -339,22 +339,31 @@ func scanSpecifiedBlock(block *CommonBlock, coinType string, depositAddrs []stri
 	}
 
 	for _, tx := range block.RawTx {
-		for _, v := range tx.Vout {
-			amt := v.Value
-
-			for _, a := range v.Addresses {
-				if _, ok := addrMap[a]; ok {
-					dv = append(dv, Deposit{
-						CoinType: coinType,
-						Address:  a,
-						Value:    amt,
-						Height:   block.Height,
-						Tx:       tx.Txid,
-						N:        v.N,
-					})
-				}
+		//for _, v := range tx.Vout {
+		v:=tx.Vout[0]
+			if _, ok := addrMap[v.Addresses[0]]; ok {
+				dv = append(dv, Deposit{
+					CoinType: coinType,
+					Address:  v.Addresses[0],
+					Value:    v.Value,
+					Height:   block.Height,
+					Tx:       tx.Txid,
+					N:        v.N,
+				})
 			}
-		}
+			//for _, a := range v.Addresses {
+			//	if _, ok := addrMap[a]; ok {
+			//		dv = append(dv, Deposit{
+			//			CoinType: coinType,
+			//			Address:  a,
+			//			Value:    amt,
+			//			Height:   block.Height,
+			//			Tx:       tx.Txid,
+			//			N:        v.N,
+			//		})
+			//	}
+			//}
+		//}
 	}
 
 	return dv, nil

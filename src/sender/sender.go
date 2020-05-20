@@ -3,8 +3,8 @@ package sender
 import (
 	"errors"
 
-	"github.com/MDLlife/MDL/src/api/cli"
-	"github.com/MDLlife/MDL/src/coin"
+	"github.com/MDLlife/MDL/src/readable"
+	"github.com/MDLlife/MDL/src/api"
 )
 
 var (
@@ -16,10 +16,10 @@ var (
 
 // Sender provids apis for sending mdl
 type Sender interface {
-	CreateTransaction(string, uint64) (*coin.Transaction, error)
-	BroadcastTransaction(*coin.Transaction) *BroadcastTxResponse
+	CreateTransaction(string, uint64) (*api.CreateTransactionResponse, error)
+	BroadcastTransaction(string) *BroadcastTxResponse
 	IsTxConfirmed(string) *ConfirmResponse
-	Balance() (*cli.Balance, error)
+	Balance() (*readable.BalancePair, error)
 }
 
 // RetrySender provids helper function to send coins with Send service
@@ -36,12 +36,12 @@ func NewRetrySender(s *SendService) *RetrySender {
 }
 
 // CreateTransaction creates a transaction offline
-func (s *RetrySender) CreateTransaction(recvAddr string, coins uint64) (*coin.Transaction, error) {
+func (s *RetrySender) CreateTransaction(recvAddr string, coins uint64) (*api.CreateTransactionResponse, error) {
 	return s.s.MDLClient.CreateTransaction(recvAddr, coins)
 }
 
 // BroadcastTransaction sends a transaction in a goroutine
-func (s *RetrySender) BroadcastTransaction(tx *coin.Transaction) *BroadcastTxResponse {
+func (s *RetrySender) BroadcastTransaction(tx string) *BroadcastTxResponse {
 	rspC := make(chan *BroadcastTxResponse, 1)
 
 	go func() {
@@ -69,6 +69,6 @@ func (s *RetrySender) IsTxConfirmed(txid string) *ConfirmResponse {
 }
 
 // Balance returns the remaining balance of the sender
-func (s *RetrySender) Balance() (*cli.Balance, error) {
+func (s *RetrySender) Balance() (*readable.BalancePair, error) {
 	return s.s.MDLClient.Balance()
 }

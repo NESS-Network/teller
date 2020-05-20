@@ -49,7 +49,7 @@ func verifyBTCAddresses(addrs []string) error {
 			return fmt.Errorf("Duplicate deposit address `%s`", addr)
 		}
 
-		if _, err := cipher.BitcoinDecodeBase58Address(addr); err != nil {
+		if _, err := cipher.DecodeBase58Address(addr); err != nil {
 			return fmt.Errorf("Invalid deposit address `%s`: %v", addr, err)
 		}
 

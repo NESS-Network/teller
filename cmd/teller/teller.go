@@ -386,9 +386,9 @@ func run() error {
 		sendRPC = sender.NewDummySender(log)
 		sendRPC.(*sender.DummySender).BindHandlers(dummyMux)
 	} else {
-		mdlClient, err := sender.NewRPC(cfg.MDLExchanger.Wallet, cfg.MDLRPC.Address)
+		mdlClient, err := sender.NewAPI(cfg.MDLExchanger.Wallet, cfg.MDLRPC.Address)
 		if err != nil {
-			log.WithError(err).Error("sender.NewRPC failed")
+			log.WithError(err).Error("sender.NewAPI failed")
 			return err
 		}
 

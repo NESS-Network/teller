@@ -11,12 +11,14 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MDLlife/MDL/src/api/cli"
+	//"github.com/MDLlife/MDL/src/cli"
 	"github.com/MDLlife/MDL/src/cipher"
 	"github.com/MDLlife/MDL/src/coin"
 	"github.com/MDLlife/MDL/src/util/droplet"
 
 	"github.com/MDLlife/teller/src/util/httputil"
+	"github.com/MDLlife/MDL/src/readable"
+	"github.com/MDLlife/MDL/src/api"
 )
 
 const seed = "survey tank about rely harbor client penalty antenna labor target jaguar bind"
@@ -32,7 +34,7 @@ func randSHA256() (cipher.SHA256, error) {
 
 // DummyTransaction wraps a *coin.Transaction with metadata for DummySender
 type DummyTransaction struct {
-	*coin.Transaction
+	Transaction string
 	Confirmed bool
 	Seq       int64
 }
@@ -51,7 +53,7 @@ type DummySender struct {
 
 // NewDummySender creates a DummySender
 func NewDummySender(log logrus.FieldLogger) *DummySender {
-	_, sec := cipher.GenerateDeterministicKeyPair([]byte(seed))
+	_, sec, _ := cipher.GenerateDeterministicKeyPair([]byte(seed))
 
 	return &DummySender{
 		broadcastTxns: make(map[string]*DummyTransaction),
@@ -63,9 +65,9 @@ func NewDummySender(log logrus.FieldLogger) *DummySender {
 }
 
 // CreateTransaction creates a fake mdl transaction
-func (s *DummySender) CreateTransaction(addr string, coins uint64) (*coin.Transaction, error) {
+func (s *DummySender) CreateTransaction(addr string, coins uint64) (*api.CreateTransactionResponse, error) {
 	if coins > s.coins {
-		return nil, NewRPCError(errors.New("CreateTransaction not enough coins"))
+		return nil, NewAPIError(errors.New("CreateTransaction not enough coins"))
 	}
 
 	c, err := droplet.ToString(coins)
@@ -96,12 +98,13 @@ func (s *DummySender) CreateTransaction(addr string, coins uint64) (*coin.Transa
 	txn.PushInput(randomInput)
 	txn.PushOutput(a, coins, 0)
 	txn.SignInputs([]cipher.SecKey{s.secKey})
-	return txn, nil
+	ctr := &api.CreateTransactionResponse{}
+	return ctr, nil
 }
 
 // BroadcastTransaction broadcasts a fake mdl transaction
-func (s *DummySender) BroadcastTransaction(txn *coin.Transaction) *BroadcastTxResponse {
-	s.log.WithField("txid", txn.TxIDHex()).Info("BroadcastTransaction")
+func (s *DummySender) BroadcastTransaction(txn string) *BroadcastTxResponse {
+	s.log.WithField("txid", txn).Info("BroadcastTransaction")
 
 	s.Lock()
 	defer s.Unlock()
@@ -111,27 +114,27 @@ func (s *DummySender) BroadcastTransaction(txn *coin.Transaction) *BroadcastTxRe
 		RspC: make(chan *BroadcastTxResponse, 1),
 	}
 
-	if _, ok := s.broadcastTxns[txn.TxIDHex()]; ok {
+	if _, ok := s.broadcastTxns[txn]; ok {
 		return &BroadcastTxResponse{
-			Err: fmt.Errorf("Transaction %s was already broadcast", txn.TxIDHex()),
+			Err: fmt.Errorf("Transaction %s was already broadcast", txn),
 			Req: req,
 		}
 	}
 
-	s.broadcastTxns[txn.TxIDHex()] = &DummyTransaction{
+	s.broadcastTxns[txn] = &DummyTransaction{
 		Transaction: txn,
 		Confirmed:   false,
 		Seq:         s.seq,
 	}
 
 	s.seq++
-
-	for _, output := range txn.Out {
-		s.coins -= output.Coins
-	}
+	//
+	//for _, output := range txn.Out {
+	//	s.coins -= output.Coins
+	//}
 
 	return &BroadcastTxResponse{
-		Txid: txn.TxIDHex(),
+		Txid: txn,
 		Req:  req,
 	}
 }
@@ -156,17 +159,19 @@ func (s *DummySender) IsTxConfirmed(txid string) *ConfirmResponse {
 }
 
 // Balance returns the remaining balance
-func (s *DummySender) Balance() (*cli.Balance, error) {
+func (s *DummySender) Balance() (*readable.BalancePair, error) {
 
-	coinStr, err := droplet.ToString(s.coins)
+	//coinStr, err := droplet.ToString(s.coins)
+	//
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &cli.Balance{
-		Coins: coinStr,
-		Hours: fmt.Sprintf("%d", s.hours),
+	return &readable.BalancePair{
+		Confirmed : readable.Balance{
+			Coins: s.coins,
+			Hours: s.hours,
+			},
 	}, nil
 }
 
@@ -211,35 +216,35 @@ func (s *DummySender) getBroadcastedTransactionsHandler(w http.ResponseWriter, r
 		return
 	}
 
-	txns := s.getBroadcastedTransactions()
+	//txns := s.getBroadcastedTransactions()
 
-	txnsRsp := make([]dummyTransactionResponse, 0, len(txns))
-	for _, txn := range txns {
-		outs := make([]dummyTransactionResponseOutput, 0, len(txn.Out))
-		for _, o := range txn.Out {
-			coins, err := droplet.ToString(o.Coins)
-			if err != nil {
-				s.log.WithError(err).Error("getBroadcastedTransactionsHandler: droplet.ToString failed")
-				httputil.ErrResponse(w, http.StatusInternalServerError)
-				return
-			}
+	//txnsRsp := make([]dummyTransactionResponse, 0, len(txns))
+	//for _, txn := range txns {
+	//	//outs := make([]dummyTransactionResponseOutput, 0, len(txn.Out))
+	//	//for _, o := range txn.Out {
+	//	//	coins, err := droplet.ToString(o.Coins)
+	//	//	if err != nil {
+	//	//		s.log.WithError(err).Error("getBroadcastedTransactionsHandler: droplet.ToString failed")
+	//	//		httputil.ErrResponse(w, http.StatusInternalServerError)
+	//	//		return
+	//	//	}
+	//	//
+	//	//	outs = append(outs, dummyTransactionResponseOutput{
+	//	//		Address: o.Address.String(),
+	//	//		Coins:   coins,
+	//	//	})
+	//	//}
+	//
+	//	txnsRsp = append(txnsRsp, dummyTransactionResponse{
+	//		Txid:      txn.Transaction,
+	//		Confirmed: txn.Confirmed,
+	//		Outputs:   outs,
+	//	})
+	//}
 
-			outs = append(outs, dummyTransactionResponseOutput{
-				Address: o.Address.String(),
-				Coins:   coins,
-			})
-		}
-
-		txnsRsp = append(txnsRsp, dummyTransactionResponse{
-			Txid:      txn.TxIDHex(),
-			Confirmed: txn.Confirmed,
-			Outputs:   outs,
-		})
-	}
-
-	if err := httputil.JSONResponse(w, txnsRsp); err != nil {
-		s.log.WithError(err).Error(err)
-	}
+	//if err := httputil.JSONResponse(w, txnsRsp); err != nil {
+	//	s.log.WithError(err).Error(err)
+	//}
 }
 
 func (s *DummySender) confirmBroadcastedTransactionHandler(w http.ResponseWriter, r *http.Request) {

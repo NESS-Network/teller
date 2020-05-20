@@ -12,8 +12,8 @@ import (
 	"strconv"
 
 	"github.com/sirupsen/logrus"
-	"github.com/skycoin/skycoin/src/api/webrpc"
-	"github.com/skycoin/skycoin/src/visor"
+	"github.com/MDLlife/MDL/src/api"
+	"github.com/MDLlife/MDL/src/readable"
 )
 
 // SKYScanner blockchain scanner to check if there're deposit coins
@@ -80,12 +80,12 @@ func (s *SKYScanner) scanBlock(block *CommonBlock) (int, error) {
 }
 
 // skyBlock2CommonBlock convert skycoin block to common block
-func skyBlock2CommonBlock(block *visor.ReadableBlock) (*CommonBlock, error) {
+func skyBlock2CommonBlock(block *readable.Block) (*CommonBlock, error) {
 	if block == nil {
 		return nil, ErrEmptyBlock
 	}
 	cb := CommonBlock{}
-	cb.Hash = block.Head.BlockHash
+	cb.Hash = block.Head.Hash
 	cb.Height = int64(block.Head.BkSeq)
 	cb.RawTx = make([]CommonTx, 0, len(block.Body.Transactions))
 	for _, tx := range block.Body.Transactions {
@@ -153,11 +153,11 @@ func (s *SKYScanner) waitForNextBlock(block *CommonBlock) (*CommonBlock, error) 
 	for {
 		nextBlock, err := s.getNextBlock(uint64(block.Height))
 		if err != nil {
-			if err == ErrEmptyBlock {
-				log.WithError(err).Debug("getNextBlock empty")
-			} else {
-				log.WithError(err).Error("getNextBlock failed")
-			}
+			//if err == ErrEmptyBlock {
+			log.WithError(err).Debug("getNextBlock empty")
+			//} else {
+			//	log.WithError(err).Error("getNextBlock failed")
+			//}
 		}
 		if nextBlock == nil {
 			log.Debug("No new block yet")
@@ -199,14 +199,12 @@ func (s *SKYScanner) GetDeposit() <-chan DepositNote {
 type SkyClient struct {
 	//walletFile   string
 	//changeAddr   string
-	skyRPCClient *webrpc.Client
+	skyRPCClient *api.Client
 }
 
 // NewSkyClient creates RPC instance
 func NewSkyClient(server, port string) *SkyClient {
-	rpcClient := &webrpc.Client{
-		Addr: server + ":" + port,
-	}
+	rpcClient := api.NewClient("http://" + server + ":" + port)
 
 	return &SkyClient{
 		skyRPCClient: rpcClient,
@@ -214,43 +212,25 @@ func NewSkyClient(server, port string) *SkyClient {
 }
 
 // GetTransaction returns transaction by txid
-func (c *SkyClient) GetTransaction(txid string) (*webrpc.TxnResult, error) {
-	return c.skyRPCClient.GetTransactionByID(txid)
+func (c *SkyClient) GetTransaction(txid string) (*readable.TransactionWithStatus, error) {
+	return c.skyRPCClient.Transaction(txid)
 }
 
 // GetBlocks get blocks from RPC
-func (c *SkyClient) GetBlocks(start, end uint64) (*visor.ReadableBlocks, error) {
-	param := []uint64{start, end}
-	blocks := visor.ReadableBlocks{}
-
-	if err := c.skyRPCClient.Do(&blocks, "get_blocks", param); err != nil {
-		return nil, err
-	}
-
-	return &blocks, nil
+func (c *SkyClient) GetBlocks(start, end uint64) (*readable.Blocks, error) {
+	return c.skyRPCClient.BlocksInRange(start, end)
 }
 
 // GetBlocksBySeq get blocks by seq
-func (c *SkyClient) GetBlocksBySeq(seq uint64) (*visor.ReadableBlock, error) {
-	ss := []uint64{seq}
-	blocks := visor.ReadableBlocks{}
-
-	if err := c.skyRPCClient.Do(&blocks, "get_blocks_by_seq", ss); err != nil {
-		return nil, err
-	}
-
-	if len(blocks.Blocks) == 0 {
-		return nil, nil
-	}
-
-	return &blocks.Blocks[0], nil
+func (c *SkyClient) GetBlocksBySeq(seq uint64) (*readable.Block, error) {
+	return c.skyRPCClient.BlockBySeq(seq)
 }
 
 // GetLastBlocks get last blocks
-func (c *SkyClient) GetLastBlocks() (*visor.ReadableBlock, error) {
-	param := []uint64{1}
-	blocks := visor.ReadableBlocks{}
-	if err := c.skyRPCClient.Do(&blocks, "get_lastblocks", param); err != nil {
+func (c *SkyClient) GetLastBlocks() (*readable.Block, error) {
+	var blocks *readable.Blocks
+	blocks, err := c.skyRPCClient.LastBlocks(1)
+	if err != nil {
 		return nil, err
 	}
 

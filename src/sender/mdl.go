@@ -8,9 +8,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/MDLlife/MDL/src/api/cli"
-	"github.com/MDLlife/MDL/src/api/webrpc"
-	"github.com/MDLlife/MDL/src/coin"
+	"github.com/MDLlife/MDL/src/readable"
+	"github.com/MDLlife/MDL/src/api"
 )
 
 const (
@@ -20,13 +19,13 @@ const (
 
 // BroadcastTxRequest send coin request struct
 type BroadcastTxRequest struct {
-	Tx   *coin.Transaction
+	Tx   string
 	RspC chan *BroadcastTxResponse // response
 }
 
 // Verify verifies the request parameters
 func (r BroadcastTxRequest) Verify() error {
-	if r.Tx == nil {
+	if len(r.Tx) == 0 {
 		return errors.New("Tx empty")
 	}
 
@@ -72,12 +71,12 @@ type SendService struct {
 	confirmChan     chan ConfirmRequest
 }
 
-// MDLClient defines a MDL RPC client interface for sending and confirming
+// MDLClient defines a MDL API client interface for sending and confirming
 type MDLClient interface {
-	CreateTransaction(string, uint64) (*coin.Transaction, error)
-	BroadcastTransaction(*coin.Transaction) (string, error)
-	GetTransaction(string) (*webrpc.TxnResult, error)
-	Balance() (*cli.Balance, error)
+	CreateTransaction(string, uint64) (*api.CreateTransactionResponse, error)
+	BroadcastTransaction(string) (string, error)
+	GetTransaction(string) (*readable.TransactionWithStatus, error)
+	Balance() (*readable.BalancePair, error)
 }
 
 // NewService creates sender instance
@@ -155,7 +154,7 @@ func (s *SendService) Confirm(req ConfirmRequest) (*ConfirmResponse, error) {
 	}
 
 	return &ConfirmResponse{
-		Confirmed: tx.Transaction.Status.Confirmed,
+		Confirmed: tx.Status.Confirmed,
 		Req:       req,
 	}, nil
 }
@@ -189,7 +188,7 @@ func (s *SendService) ConfirmRetry(req ConfirmRequest) (*ConfirmResponse, error)
 		}
 
 		return &ConfirmResponse{
-			Confirmed: tx.Transaction.Status.Confirmed,
+			Confirmed: tx.Status.Confirmed,
 			Req:       req,
 		}, nil
 	}
@@ -197,7 +196,7 @@ func (s *SendService) ConfirmRetry(req ConfirmRequest) (*ConfirmResponse, error)
 
 // BroadcastTx sends coins
 func (s *SendService) BroadcastTx(req BroadcastTxRequest) (*BroadcastTxResponse, error) {
-	log := s.log.WithField("broadcastTxTxid", req.Tx.TxIDHex())
+	log := s.log.WithField("broadcastTxTxid", req.Tx)
 
 	// Verify the request
 	if err := req.Verify(); err != nil {
@@ -219,7 +218,7 @@ func (s *SendService) BroadcastTx(req BroadcastTxRequest) (*BroadcastTxResponse,
 
 // BroadcastTxRetry sends coins and will retry indefinitely until it succeeds
 func (s *SendService) BroadcastTxRetry(req BroadcastTxRequest) (*BroadcastTxResponse, error) {
-	log := s.log.WithField("broadcastTxTxid", req.Tx.TxIDHex())
+	log := s.log.WithField("broadcastTxTxid", req.Tx)
 
 	// Verify the request
 	if err := req.Verify(); err != nil {
