@@ -1,11 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { FormattedMessage } from 'react-intl';
+//import { FormattedMessage } from 'react-intl';
 import { rem } from 'polished';
 
-import { SPACE, FONT_SIZES, FONT_FAMILIES, COLORS } from 'config';
-import Link from 'components/Link';
+//import { SPACE, FONT_SIZES, FONT_FAMILIES, COLORS } from 'config';
+import { SPACE, FONT_SIZES } from 'config';
+//import Link from 'components/Link';
 import media from 'utils/media';
 
 const Wrapper = styled.div`
@@ -23,27 +24,27 @@ const Wrapper = styled.div`
   `}
 `;
 
-const StyledLink = styled(Link)`
-  margin-right: ${rem(SPACE[5])};
-  font-family: ${FONT_FAMILIES.mono};
-  color: ${props => (props.white ? 'white' : COLORS.black)};
-  text-decoration: none;
-  font-weight: 700;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  ${media.sm.css`
-    margin-right: 0;
-    margin-left: ${rem(SPACE[7])};
-  `}
-
-  ${media.md.css`
-    margin-left: 0;
-    margin-right: ${rem(SPACE[7])};
-  `}
-`;
+// const StyledLink = styled(Link)`
+//   margin-right: ${rem(SPACE[5])};
+//   font-family: ${FONT_FAMILIES.mono};
+//   color: ${props => (props.white ? 'white' : COLORS.black)};
+//   text-decoration: none;
+//   font-weight: 700;
+//
+//   &:hover {
+//     text-decoration: underline;
+//   }
+//
+//   ${media.sm.css`
+//     margin-right: 0;
+//     margin-left: ${rem(SPACE[7])};
+//   `}
+//
+//   ${media.md.css`
+//     margin-left: 0;
+//     margin-right: ${rem(SPACE[7])};
+//   `}
+// `;
 
 const Navigation = ({ white }) => (
   <Wrapper>

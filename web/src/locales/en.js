@@ -13,16 +13,18 @@ export default {
     explore: 'Explore',
     community: 'Community',
     wallet: 'Get Wallet',
+    price: 'Coin Paprika',
     infographics: 'Infographics',
+    explorer: 'Explorer',
     whitepapers: 'Whitepapers',
-    blockchain: 'Blockchain Explorer',
     blog: 'Blog',
     twitter: 'Twitter',
     reddit: 'Reddit',
-    github: 'Github',
+    github: 'GitHub',
     telegram: 'Telegram',
     slack: 'Slack',
     roadmap: 'Roadmap',
+    platform: 'Platform',
     skyMessenger: 'Sky-Messenger',
     cxPlayground: 'CX Playground',
     team: 'Team',
@@ -34,27 +36,30 @@ export default {
     discord: 'Discord',
   },
   distribution: {
-    rate: 'Current rate: {rate} MDL = 1 {coinType}',
-    inventory: 'Current inventory: {coins} MDL available',
-    title: 'MDL Talent Hub Initial Token Offering',
-    heading: 'MDL Talent Hub Initial Token Offering',
-    headingEnded: 'MDL Talent Hub Initial Token Offering is currently closed',
-    ended: `<p>Join the <a href="https://t.me/MDL_Talent_Hub">MDL Telegram</a>
+    rate: 'Current rate: 1 {coinType} = {rate} MDL',
+    inventory: 'Available Now: <strong>{coins} MDL</strong>',
+    title: 'MDL Talent Hub Teller',
+    heading: 'MDL Talent Hub Teller',
+    headingEnded: 'MDL Talent Hub Teller is currently disabled',
+    ended: `<p>Join the <a href="https://t.me/MDL_Talent_Hub" target="_blank">MDL Telegram</a>
       or follow the
-      <a href="https://twitter.com/mdl_talent_hub">MDL Twitter</a>.`,
-    instructions: `
+      <a href="https://twitter.com/mdl_talent_hub" target="_blank">MDL Twitter</a>.
 
-<p>To purchase some MDL:</p>
+       <p>You can check the current market value of <a href="https://coinpaprika.com/coin/mdl-mdl">MDL at CoinPaprika</a>.</p>`,
+    instructions: `<p>You can check the current market value of <a href="https://coinpaprika.com/coin/mdl-mdl">MDL at CoinPaprika</a>.</p>
+
+<p>To purchase MDL tokens:</p>
 
 <ul>
   <li>Enter your MDL address below</li>
-  <li>Choose diserable payment method (BTC, ETH, SKY or WAVES - some can be temporarily disabled)</li>
-  <li>Press Get Address You&apos;ll receive a unique address in choosen crypto to purchase MDL</li>
-  <li>Send funds to the address</li>
+  <li>Choose prefered payment method<br>(SKY, ETH, BTC - some might be temporarily disabled)</li>
+  <li>Press Get Address <br>You&apos;ll receive a unique address for the crypto you chose to purchase MDL</li>
+  <li>Send funds to the provided address</li>
 </ul>
 
-<p>You can check the status of your order by entering your address and selecting <strong>Check status</strong>.</p>
-<p>Each time you select <strong>Get Address</strong>, a new address is generated. A single MDL address can have up to 5 other crypto addresses assigned to it.</p>
+<p>Check the status of your order by entering your address and selecting <strong>Check status</strong>.</p>
+<p>Each time you select <strong>Get Address</strong>, a new address is generated.</p>
+<p>A single MDL address can have up to {max_bound_addrs} addresses assigned to it.</p>
     `,
     statusFor: 'Status for {mdlAddress}',
     enterAddress: 'Enter MDL address',
@@ -64,7 +69,7 @@ export default {
     recAddress: 'address',
     errors: {
       noSkyAddress: 'Please enter your MDL address.',
-      coinsSoldOut: 'MDL ITO is currently sold out, check back later.',
+      coinsSoldOut: 'All MDL tokens are currently sold out, check back later.',
     },
     statuses: {
       waiting_deposit: '[tx-{id} {updated}] Waiting for deposit.',

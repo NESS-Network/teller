@@ -69,7 +69,7 @@ class Distribution extends React.Component {
   checkExchangeStatus() {
     return checkExchangeStatus()
     .then(status => {
-      if (status.error != "") {
+      if (status.error !== "") {
         this.setState({
           disabledReason: "coinsSoldOut",
           balance: status.balance,
@@ -122,12 +122,6 @@ class Distribution extends React.Component {
     });
   }
 
-  handleCoinTypeChange(selectedOption) {
-    this.state.btcAddress = ''
-    this.setState({
-      coinType: selectedOption.value
-    });
-  }
 
   closeModals() {
     this.setState({
@@ -137,12 +131,19 @@ class Distribution extends React.Component {
 
   currentCoinPrice() {
     switch (this.state.coinType) {
-      case "BTC": return this.supported[0].exchange_rate;
-      case "ETH": return this.supported[1].exchange_rate;
-      case "SKY": return this.supported[2].exchange_rate;
-      case "WAVES": return this.supported[3].exchange_rate;
+      case "BTC": return this.state.supported[0].exchange_rate;
+      case "ETH": return this.state.supported[1].exchange_rate;
+      case "SKY": return this.state.supported[2].exchange_rate;
+      case "WAVES": return this.state.supported[3].exchange_rate;
+      default: return "1";
     }
-    return "1"
+  }
+
+  handleCoinTypeChange(selectedOption) {
+    this.setState({
+      btcAddress: '',
+      coinType: selectedOption.value,
+    });
   }
 
   checkStatus() {
@@ -233,7 +234,7 @@ class Distribution extends React.Component {
                   <FormattedMessage id="distribution.heading" />
                 </Heading>
                 <Text heavy color="black" fontSize={[2, 3]} mb={[4, 6]} as="div">
-                  <FormattedMessage
+                  <FormattedHTMLMessage
                     id="distribution.inventory"
                     values={{
                       coins: this.state.balance && this.state.balance.coins,
@@ -242,7 +243,8 @@ class Distribution extends React.Component {
                 </Text>
 
                 <Text heavy color="black" fontSize={[2, 3]} as="div">
-                  <FormattedHTMLMessage id="distribution.instructions" />
+                  <FormattedHTMLMessage id="distribution.instructions"
+                  values={{max_bound_addrs:this.state.max_bound_addrs}}/>
                 </Text>
 
                 <Input
@@ -256,23 +258,24 @@ class Distribution extends React.Component {
                   <Select
                     name="coin_type"
                     value={this.state.coinType}
+                    clearable={false}
                     onChange={this.handleCoinTypeChange}
                     options={[
-                      { value: 'BTC', label: 'Bitcoin', disabled: true },
-                      { value: 'ETH', label: 'Ethereum', disabled: true  },
-                      { value: 'SKY', label: 'Skycoin', disabled: false },
-                      { value: 'WAVES', label: 'Waves (Temporary Disabled)', disabled: true },
-                      { value: 'MDL.life', label: 'MDL.life (pre-MDL token on Waves)', disabled: true },
+                      { value: 'BTC', label: 'Bitcoin', disabled: !this.state.supported[0].enabled },
+                      { value: 'ETH', label: 'Ethereum', disabled: !this.state.supported[1].enabled  },
+                      { value: 'SKY', label: 'Skycoin (SKY) --- skycoin.com', disabled: !this.state.supported[2].enabled },
+                      { value: 'WAVES', label: 'Waves (Disabled)', disabled: !this.state.supported[3].enabled },
+                      // { value: 'MDL.life', label: 'MDL.life (pre-MDL token on Waves)', disabled: this.state.supported[4].enabled },
                     ]}
                   />
                   <Text heavy color="grey" fontSize={[2, 3]}>
                     <FormattedMessage
                       id="distribution.rate"
                       values={{
-                        rate: +(0),
+                        rate: parseFloat(this.currentCoinPrice()),
                         coinType: this.state.coinType,
                       }}
-                    /> "(approx. $0.05 USD per 1 MDL)"
+                    />
                   </Text>
                 </div>
 

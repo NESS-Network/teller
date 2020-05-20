@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const CONTACT_EMAIL = 'team@mdl.life';
+const CONTACT_EMAIL_1 = 'rt@mdl.life';
+const CONTACT_EMAIL_2 = 'tm@mdl.life';
 
 const Email = styled.a`
   color: inherit;
@@ -13,7 +14,13 @@ const Email = styled.a`
 `;
 
 export default () => (
-  <Email href={`mailto:${CONTACT_EMAIL}`}>
-    {CONTACT_EMAIL}
-  </Email>
+  <div>
+    <Email href={`mailto:${CONTACT_EMAIL_1}`}>
+      {CONTACT_EMAIL_1}
+    </Email>
+    <br/>
+    <Email href={`mailto:${CONTACT_EMAIL_2}`}>
+     {CONTACT_EMAIL_2}
+    </Email>
+  </div>
 );

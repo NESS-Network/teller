@@ -32,43 +32,48 @@ export default {
     instagram: 'Instagram',
     facebook: 'Facebook',
     discord: 'Discord',
+    platform: "Платформа",
+    explorer: "Explorer",
+    price: "CoinPaprika",
+
   },
   distribution: {
-    rate: 'Current OTC rate: {rate} MDL/{coinType}',
-    inventory: 'Current inventory: {coins} MDL available',
-    title: 'MDL OTC',
-    heading: 'MDL OTC',
+    rate: 'Цена: 1 {coinType} = {rate} MDL',
+    inventory: 'Доступно: <strong>{coins} MDL</strong>',
+    title: 'MDL Банкомат',
+    heading: 'MDL Банкомат',
     headingEnded: 'The previous distribution event finished on',
     ended: `<p>Join the <a href="https://t.me/mdl">MDL Telegram</a>
       or follow the
       <a href="https://twitter.com/mdlproject">MDL Twitter</a>
       to learn when the next event begins.`,
-    instructions: `<p>You can check the current market value for <a href="https://coinmarketcap.com/currencies/mdl/">MDL at CoinMarketCap</a>.</p>
+    instructions: `<p>Рыночнкую цену <a href="https://coinmarketcap.com/currencies/mdl/">MDL смотреть на CoinPaprika</a>.</p>
 
-<p>Что необходимо для участия в распространении:</p>
+<p>Для преобретения MDL токенов:</p>
 
 <ul>
   <li>Введите ваш MDL адрес</li>
-  <li>Вы получите уникальный Bitcoin адрес для приобретения MDL</li>
-  <li>Пошлите Bitcoin на полученый адрес</li>
+  <li>Вы получите уникальный Skycoin адрес для покупки MDL</li>
+  <li>Пошлите Skycoin на полученый адрес</li>
 </ul>
 
 <p>Вы можете проверить статус заказа, введя адрес MDL и нажав на <strong>Проверить статус</strong>.</p>
-<p>Каждый раз при нажатии на <strong>Получить адрес</strong>, генерируется новый BTC адрес. Один адрес MDL может иметь не более 5 BTC-адресов.</p>
+<p>Каждый раз при нажатии на <strong>Получить адрес</strong>, генерируется новый SKY адрес.</p>
+<p>Один адрес MDL может иметь не более {max_bound_addrs} прикреплённых адресов Skycoin.</p>
     `,
     statusFor: 'Статус по {mdlAddress}',
     enterAddress: 'Введите адрес MDL',
     getAddress: 'Получить адрес',
     checkStatus: 'Проверить статус',
     loading: 'Загрузка...',
-    btcAddress: 'BTC адрес',
+    btcAddress: 'SKY адрес',
     errors: {
       noSkyAddress: 'Пожалуйста введите ваш MDL адрес.',
       coinsSoldOut: 'MDL OTC is currently sold out, check back later.',
     },
     statuses: {
-      waiting_deposit: '[tx-{id} {updated}] Ожидаем BTC депозит.',
-      waiting_send: '[tx-{id} {updated}] BTC депозит подтверждён. MDL транзакция поставлена в очередь.',
+      waiting_deposit: '[tx-{id} {updated}] Ожидаем SKY депозит.',
+      waiting_send: '[tx-{id} {updated}] SKY депозит подтверждён. MDL транзакция поставлена в очередь.',
       waiting_confirm: '[tx-{id} {updated}] MDL транзакция отправлена. Ожидаем подтверждение.',
       done: '[tx-{id} {updated}] Завершена. Проверьте ваш MDL кошелёк.',
     },

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { rem } from 'polished';
 
 import Link from 'components/Link';
-import logo from './logo-black.png';
+import logo from './logo-mdl.png';
 import logoWhite from './logo-white.png';
 
 const StyledLink = styled(Link)`
@@ -14,14 +14,13 @@ const StyledLink = styled(Link)`
 const Img = styled.img.attrs({
   alt: 'MDL',
 })`
-  display: block;
   height: ${rem(40)};
   max-width: 100%;
 `;
 
 const Logo = props => (
   <StyledLink to="/">
-    <Img {...props} src={props.white ? logoWhite : logo} />
+    <Img {...props} src={props.white ? logoWhite :  logo} />
   </StyledLink>
 );
 

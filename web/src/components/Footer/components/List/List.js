@@ -45,7 +45,7 @@ const List = ({ heading, links }) => (
                 <FormattedMessage id={label} />
               </StyledBuy>
             ) : (
-              <StyledLink href={href} to={to}>
+              <StyledLink href={href} to={to} target="_blank">
                 <FormattedMessage id={label} />
               </StyledLink>
             )}

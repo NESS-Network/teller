@@ -1,13 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { Flex, Box } from 'grid-styled';
 import { rem } from 'polished';
 
 import { SPACE, COLORS } from 'config';
 import Container from '../Container';
 import Logo from '../Logo';
-import Navigation from './components/Navigation';
 
 const Wrapper = styled.div`
   padding: ${rem(SPACE[6])} 0;
@@ -15,18 +13,18 @@ const Wrapper = styled.div`
   border-bottom: ${props => (props.border ? `2px solid ${COLORS.gray[1]}` : 'none')}
 `;
 
+const Centered = styled.div`
+  text-align: center;
+  align-content: center;
+  width: 100%;
+`
+
 const Header = ({ white, border }) => (
   <Wrapper border={border}>
     <Container>
-      <Flex align="center" wrap>
-        <Box width={[1 / 1, 1 / 4]}>
-          <Logo white={white} />
-        </Box>
-
-        <Box width={[1 / 1, 3 / 4]}>
-          <Navigation white={white} />
-        </Box>
-      </Flex>
+      <Centered>
+        <Logo white={white} />
+      </Centered>
     </Container>
   </Wrapper>
 );
