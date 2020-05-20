@@ -70,7 +70,7 @@ export default {
     getAddress: 'Получить адрес',
     checkStatus: 'Проверить статус',
     loading: 'Загрузка...',
-    btcAddress: '{coinType} адрес',
+    recAddress: '{coinType} адрес',
     errors: {
       noSkyAddress: 'Пожалуйста введите ваш MDL адрес.',
       coinsSoldOut: 'MDL OTC is currently sold out, check back later.',

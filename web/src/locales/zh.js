@@ -68,7 +68,7 @@ export default {
     getAddress: '获取地址',
     checkStatus: '检查状态',
     loading: '加载中...',
-    btcAddress: 'SKY地址',
+    recAddress: '{coinType}地址',
     errors: {
       noSkyAddress: '请输入您的MDL地址',
       coinsSoldOut: 'MDL自动取款机暂时关门',
