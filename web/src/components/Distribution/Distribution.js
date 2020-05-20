@@ -280,7 +280,7 @@ class Distribution extends React.Component {
                 </div>
 
                 {this.state.btcAddress && <Address heavy color="black" fontSize={[2, 3]} as="p">
-                  <strong>{this.state.coinType} <FormattedHTMLMessage id="distribution.recAddress" values={{coinType:this.state.coinType}}/>:<br/></strong>
+                  <strong><FormattedHTMLMessage id="distribution.recAddress" values={{coinType:this.state.coinType}}/>:<br/></strong>
                   {this.state.btcAddress}
                 </Address>}
 
