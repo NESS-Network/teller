@@ -12,7 +12,11 @@ export default {
     getStarted: 'Get started',
     explore: 'Explore',
     community: 'Community',
-    wallet: 'Get Wallet',
+    about: 'About',
+    wallet_android: 'Android Wallet',
+    wallet_mac: 'MacOS Wallet',
+    wallet_win: 'Windows Wallet',
+    wallet_lin: 'Linux Wallet',
     price: 'Coin Paprika',
     infographics: 'Infographics',
     explorer: 'Explorer',
@@ -52,21 +56,21 @@ export default {
 
 <ul>
   <li>Enter your MDL address below</li>
-  <li>Choose prefered payment method<br>(SKY, ETH, BTC - some might be temporarily disabled)</li>
-  <li>Press Get Address <br>You&apos;ll receive a unique address for the crypto you chose to purchase MDL</li>
-  <li>Send funds to the provided address</li>
+  <li>Choose preferred payment method<br>(SKY, ETH, BTC - some might be temporarily disabled)</li>
+  <li>Press Get Address <br>You&apos;ll receive a unique {coinType} address to purchase MDL</li>
+  <li>Send funds to the provided {coinType} address</li>
 </ul>
 
 <p>Check the status of your order by entering your address and selecting <strong>Check status</strong>.</p>
-<p>Each time you select <strong>Get Address</strong>, a new address is generated.</p>
-<p>A single MDL address can have up to {max_bound_addrs} addresses assigned to it.</p>
+<p>Each time you select <strong>Get Address</strong>, a new {coinType} address is generated.</p>
+<p>A single MDL address can have up to {max_bound_addrs} {coinType} addresses assigned to it.</p>
     `,
     statusFor: 'Status for {mdlAddress}',
     enterAddress: 'Enter MDL address',
     getAddress: 'Get address',
     checkStatus: 'Check status',
     loading: 'Loading...',
-    recAddress: 'address',
+    recAddress: '{coinType} address',
     errors: {
       noSkyAddress: 'Please enter your MDL address.',
       coinsSoldOut: 'All MDL tokens are currently sold out, check back later.',

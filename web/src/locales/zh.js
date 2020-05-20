@@ -12,7 +12,11 @@ export default {
     getStarted: '开始',
     explore: '浏览',
     community: '社区',
-    wallet: '下载钱包',
+    about: '关于',
+    wallet_android: '下载Android钱包',
+    wallet_mac: '下载MacOS钱包',
+    wallet_win: '下载Windows钱包',
+    wallet_lin: '下载Linux钱包',
     infographics: '信息图表',
     whitepapers: '白皮书',
     blockchain: '区块浏览器',
@@ -51,12 +55,12 @@ export default {
 
 <ul>
   <li>在下面输入您的MDL地址</li>
-  <li>您将收到一个唯一的Skycoin地址用来购买MDL</li>
-  <li>将Skycoin发送到您收到的地址上</li>
+  <li>您将收到一个唯一的{coinType}地址用来购买MDL</li>
+  <li>将{coinType}发送到您收到的地址上</li>
 </ul>
 
 <p>您可以通过输入您的MDL地址并点击下面的"<strong>检查状态</strong>"来核实订单的状态</p>
-<p>每次当您点击<strong>获取地址</strong>, 系统会产生一个新的SKY地址</p>
+<p>每次当您点击<strong>获取地址</strong>, 系统会产生一个新的{coinType}地址</p>
 <p>一个SKY地址最多只准许兑换{max_bound_addrs}个比特币</p>
     `,
     statusFor: 'SKY地址{mdlAddress}的订单状态',
@@ -71,8 +75,8 @@ export default {
     },
     statuses: {
       done: '交易 {id}: MDL已经发送并确认(更新于{updated}).',
-      waiting_deposit: '交易 {id}: 等待SKY存入(更新于 {updated}).',
-      waiting_send: '交易 {id}: SKY存入已确认; MDL发送在队列中 (更新于 {updated}).',
+      waiting_deposit: '交易 {id}: 等待存入(更新于 {updated}).',
+      waiting_send: '交易 {id}: 存入已确认; MDL发送在队列中 (更新于 {updated}).',
       waiting_confirm: '交易 {id}: MDL已发送,等待交易确认 (更新于 {updated}).',
     },
   },

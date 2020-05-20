@@ -12,7 +12,11 @@ export default {
     getStarted: 'Начать',
     explore: 'Дополнительно',
     community: 'Сообщество',
-    wallet: 'Получить Кошелёк',
+    about: 'О проекте',
+    wallet_android: 'Android',
+    wallet_mac: 'MacOS',
+    wallet_win: 'Windows',
+    wallet_lin: 'Linux',
     infographics: 'Инфографика',
     whitepapers: 'Документация',
     blockchain: 'Блокчейн Обозреватель',
@@ -53,8 +57,8 @@ export default {
 
 <ul>
   <li>Введите ваш MDL адрес</li>
-  <li>Вы получите уникальный Skycoin адрес для покупки MDL</li>
-  <li>Пошлите Skycoin на полученый адрес</li>
+  <li>Вы получите уникальный {coinType} адрес для покупки MDL</li>
+  <li>Пошлите {coinType} на полученый адрес</li>
 </ul>
 
 <p>Вы можете проверить статус заказа, введя адрес MDL и нажав на <strong>Проверить статус</strong>.</p>
@@ -66,14 +70,14 @@ export default {
     getAddress: 'Получить адрес',
     checkStatus: 'Проверить статус',
     loading: 'Загрузка...',
-    btcAddress: 'SKY адрес',
+    btcAddress: '{coinType} адрес',
     errors: {
       noSkyAddress: 'Пожалуйста введите ваш MDL адрес.',
       coinsSoldOut: 'MDL OTC is currently sold out, check back later.',
     },
     statuses: {
-      waiting_deposit: '[tx-{id} {updated}] Ожидаем SKY депозит.',
-      waiting_send: '[tx-{id} {updated}] SKY депозит подтверждён. MDL транзакция поставлена в очередь.',
+      waiting_deposit: '[tx-{id} {updated}] Ожидаем депозит.',
+      waiting_send: '[tx-{id} {updated}] Депозит подтверждён. MDL транзакция поставлена в очередь.',
       waiting_confirm: '[tx-{id} {updated}] MDL транзакция отправлена. Ожидаем подтверждение.',
       done: '[tx-{id} {updated}] Завершена. Проверьте ваш MDL кошелёк.',
     },

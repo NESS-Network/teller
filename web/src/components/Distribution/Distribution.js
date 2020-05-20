@@ -244,7 +244,7 @@ class Distribution extends React.Component {
 
                 <Text heavy color="black" fontSize={[2, 3]} as="div">
                   <FormattedHTMLMessage id="distribution.instructions"
-                  values={{max_bound_addrs:this.state.max_bound_addrs}}/>
+                  values={{max_bound_addrs:this.state.max_bound_addrs, coinType:this.state.coinType}}/>
                 </Text>
 
                 <Input
@@ -263,7 +263,7 @@ class Distribution extends React.Component {
                     options={[
                       { value: 'BTC', label: 'Bitcoin', disabled: !this.state.supported[0].enabled },
                       { value: 'ETH', label: 'Ethereum', disabled: !this.state.supported[1].enabled  },
-                      { value: 'SKY', label: 'Skycoin (SKY) --- skycoin.com', disabled: !this.state.supported[2].enabled },
+                      { value: 'SKY', label: 'Skycoin (SKY) -- www.skycoin.com --', disabled: !this.state.supported[2].enabled },
                       { value: 'WAVES', label: 'Waves (Disabled)', disabled: !this.state.supported[3].enabled },
                       // { value: 'MDL.life', label: 'MDL.life (pre-MDL token on Waves)', disabled: this.state.supported[4].enabled },
                     ]}
@@ -280,7 +280,7 @@ class Distribution extends React.Component {
                 </div>
 
                 {this.state.btcAddress && <Address heavy color="black" fontSize={[2, 3]} as="p">
-                  <strong>{this.state.coinType} <FormattedHTMLMessage id="distribution.recAddress" />: </strong>
+                  <strong>{this.state.coinType} <FormattedHTMLMessage id="distribution.recAddress" values={{coinType:this.state.coinType}}/>:<br/></strong>
                   {this.state.btcAddress}
                 </Address>}
 
