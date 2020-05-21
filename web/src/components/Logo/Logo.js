@@ -3,13 +3,9 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { rem } from 'polished';
 
-import Link from 'components/Link';
 import logo from './logo-mdl.png';
 import logoWhite from './logo-white.png';
 
-const StyledLink = styled(Link)`
-  display: block;
-`;
 
 const Img = styled.img.attrs({
   alt: 'MDL',
@@ -19,9 +15,9 @@ const Img = styled.img.attrs({
 `;
 
 const Logo = props => (
-  <StyledLink to="https://mdl.life/">
+  <a href="https://mdl.life">
     <Img {...props} src={props.white ? logoWhite :  logo} />
-  </StyledLink>
+  </a>
 );
 
 Logo.propTypes = {
