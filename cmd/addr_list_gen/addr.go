@@ -9,7 +9,7 @@ import (
 func main() {
 
 	if len(os.Args) < 2 {
-		println("Usage: addr <wallet_filanem>")
+		println("Usage: addr <wallet_filename>")
 		return
 	}
 

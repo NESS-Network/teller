@@ -10,7 +10,6 @@ import (
 	"context"
 	"math/big"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -175,8 +174,7 @@ func ethBlock2CommonBlock(block *types.Block) (*CommonBlock, error) {
 		//1 eth = 1e18 wei ,tx.Value() is very big that may overflow(int64), so store it as Gwei(1Gwei=1e9wei) and recover it when used
 		amt := mathutil.Wei2Gwei(tx.Value())
 
-		//ethcoin address must be lowercase
-		realaddr := strings.ToLower(to.String())
+		realaddr := to.String()
 		cv := CommonVout{}
 		cv.N = uint32(i)
 		cv.Value = amt
