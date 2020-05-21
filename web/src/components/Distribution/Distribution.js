@@ -21,6 +21,7 @@ import Text from 'components/Text';
 import media from '../../utils/media';
 import Select from 'react-select';
 import 'react-select/dist/react-select.css';
+import QRCode from 'qrcode.react';
 
 import { checkStatus, getAddress, getConfig, checkExchangeStatus } from '../../utils/distributionAPI';
 
@@ -220,6 +221,7 @@ class Distribution extends React.Component {
 
           <Container>
             {!this.state.enabled ? <Flex column>
+
               <Heading heavy as="h2" fontSize={[5, 6]} color="black" mb={[4, 6]}>
                 {(this.state.disabledReason === "coinsSoldOut") ?
                  <FormattedMessage id="distribution.errors.coinsSoldOut" /> :
@@ -273,6 +275,7 @@ class Distribution extends React.Component {
                       id="distribution.rate"
                       values={{
                         rate: parseFloat(this.currentCoinPrice()),
+                        rateRev: parseFloat(1/this.currentCoinPrice()).toPrecision(3),
                         coinType: this.state.coinType,
                       }}
                     />
@@ -281,7 +284,14 @@ class Distribution extends React.Component {
 
                 {this.state.btcAddress && <Address heavy color="black" fontSize={[2, 3]} as="p">
                   <strong><FormattedHTMLMessage id="distribution.recAddress" values={{coinType:this.state.coinType}}/>:<br/></strong>
+                  <center>
                   {this.state.btcAddress}
+                  <div>
+                    <br/>
+                  <QRCode value={this.state.btcAddress} renderAs='svg'/>
+                    <br/>
+                  </div>
+                  </center>
                 </Address>}
 
                 <div>

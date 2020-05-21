@@ -40,7 +40,7 @@ export default {
     discord: 'Discord',
   },
   distribution: {
-    rate: 'Current rate: 1 {coinType} = {rate} MDL',
+    rate: 'Current rate: 1 {coinType} = {rate} MDL, 1 MDL = {rateRev} {coinType}',
     inventory: 'Available Now: <strong>{coins} MDL</strong>',
     title: 'MDL Talent Hub Teller',
     heading: 'MDL Talent Hub Teller',
