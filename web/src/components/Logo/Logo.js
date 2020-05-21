@@ -19,7 +19,7 @@ const Img = styled.img.attrs({
 `;
 
 const Logo = props => (
-  <StyledLink to="/">
+  <StyledLink to="https://mdl.life/">
     <Img {...props} src={props.white ? logoWhite :  logo} />
   </StyledLink>
 );
