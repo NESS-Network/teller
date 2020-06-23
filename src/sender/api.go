@@ -60,6 +60,8 @@ func (c *API) CreateTransaction(recvAddr string, amount uint64) (*api.CreateTran
 		return nil, APIError{err}
 	}
 
+	strCoins = strCoins[:len(strCoins)-3]
+
 	to := api.Receiver{Address: recvAddr, Coins: strCoins}
 	req := api.WalletCreateTransactionRequest{ WalletID: c.walletFile }
 	req.To = []api.Receiver{to}
