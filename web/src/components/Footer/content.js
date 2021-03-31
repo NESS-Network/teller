@@ -11,13 +11,13 @@ export default [{
     href: 'https://mdl.app',
   },{
     label: 'footer.wallet_mac',
-    href: 'https://github.com/MDLlife/MDL/releases/download/v0.25.1/mdl-0.25.1-gui-electron-osx.dmg',
+    href: 'https://github.com/MDLlife/MDL/releases/download/v0.27.1/MDL-0.27.1-osx.dmg',
   },{
     label: 'footer.wallet_win',
-    href: 'https://github.com/MDLlife/MDL/releases/download/v26.0.1/mdl-0.26.0-gui-electron-win-setup.exe',
+    href: 'https://github.com/MDLlife/MDL/releases/download/v0.27.1/MDL-0.27.1-win-setup.exe',
   },{
     label: 'footer.wallet_lin',
-    href: 'https://github.com/MDLlife/MDL/releases/download/v26.0.1/MDL-0.26.0-x86_64.AppImage',
+    href: 'https://github.com/MDLlife/MDL/releases/download/v0.27.1/MDL-0.27.1-linux.AppImage',
   },],
 }, {
   heading: 'footer.explore',
