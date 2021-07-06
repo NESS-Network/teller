@@ -18,7 +18,7 @@ max_bound_addrs = 2 # 0 means unlimited
 bind_enabled = true # Disable this to prevent binding of new addresses
 
 [mdl_rpc]
-address = "127.0.0.1:8320"
+address = "127.0.0.1:6460"
 
 [btc_rpc]
 enabled = false
@@ -35,7 +35,7 @@ port = "8545" # REQUIRED
 [sky_rpc]
 enabled = false
 server = "127.0.0.1" # REQUIRED
-port = "6430" # REQUIRED
+port = "6420" # REQUIRED
 
 [waves_rpc]
 enabled = false

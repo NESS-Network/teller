@@ -9,7 +9,7 @@ import (
 	"github.com/modeneis/waves-go-client/model"
 	//"github.com/skycoin/skycoin/src/api"
 	"github.com/MDLlife/MDL/src/readable"
-	//"github.com/SkycoinProject/skycoin/src/readable"
+	//"github.com/skycoin/skycoin/src/readable"
 )
 
 // Scanner provids apis for interacting with a scan service

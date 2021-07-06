@@ -10,8 +10,8 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
-	"github.com/SkycoinProject/skycoin/src/cipher"
-	//"github.com/SkycoinProject/skycoin/src/cipher/base58"
+	"github.com/skycoin/skycoin/src/cipher"
+	//"github.com/skycoin/skycoin/src/cipher/base58"
 	"golang.org/x/crypto/blake2b"
 )
 
